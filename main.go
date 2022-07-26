@@ -7,11 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/astralservices/bots/packages/framework"
-	"github.com/astralservices/bots/utils"
+	db "github.com/astralservices/bots/pkg/database/supabase"
+	"github.com/astralservices/bots/pkg/framework"
+	"github.com/astralservices/bots/pkg/types"
+	"github.com/astralservices/bots/pkg/utils"
 	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
-	"github.com/nedpals/supabase-go"
 	realtimego "github.com/overseedio/realtime-go"
 )
 
@@ -37,6 +38,8 @@ func main() {
 		}
 	}
 
+	database := db.New()
+
 	cache := Cache{
 		Bots: make(map[string]*framework.Bot),
 	}
@@ -47,7 +50,7 @@ func main() {
 			Key:      API_KEY,
 			Table:    "bots",
 			OnInsert: func(m realtimego.Message) {
-				var payload utils.RealtimePayload[utils.IBot]
+				var payload utils.RealtimePayload[types.Bot]
 
 				str, err := json.Marshal(m.Payload)
 
@@ -65,7 +68,7 @@ func main() {
 				}
 			},
 			OnDelete: func(m realtimego.Message) {
-				var payload utils.RealtimePayload[utils.IBot]
+				var payload utils.RealtimePayload[types.Bot]
 
 				str, err := json.Marshal(m.Payload)
 
@@ -83,7 +86,7 @@ func main() {
 				}
 			},
 			OnUpdate: func(m realtimego.Message) {
-				var payload utils.RealtimePayload[utils.IBot]
+				var payload utils.RealtimePayload[types.Bot]
 
 				str, err := json.Marshal(m.Payload)
 
@@ -117,15 +120,11 @@ func main() {
 		botsRealtimeOpts.SetupRealtime()
 	}()
 
-	supabaseClient := supabase.CreateClient(ENDPOINT, API_KEY)
-
 	sentry.Init(sentry.ClientOptions{
 		Dsn: "https://681b6c2ca26a4c258e77a0068c84404f@gt.astralapp.io/4",
 	})
 
-	var bots []utils.IBot
-
-	supabaseClient.DB.From("bots").Select("*").Eq("region", REGION).Execute(&bots)
+	bots, err := database.GetAllBotsForRegion(REGION)
 
 	for _, bot := range bots {
 		cache.AddBot(bot)
@@ -139,7 +138,7 @@ func main() {
 	}()
 }
 
-func (c *Cache) AddBot(bot utils.IBot) {
+func (c *Cache) AddBot(bot types.Bot) {
 	log.Println("Add Bot", *bot.ID)
 
 	botClient := framework.Bot{
@@ -151,7 +150,7 @@ func (c *Cache) AddBot(bot utils.IBot) {
 	c.Bots[*bot.ID] = &botClient
 }
 
-func (c *Cache) DeleteBot(bot utils.IBot) {
+func (c *Cache) DeleteBot(bot types.Bot) {
 	log.Println("Delete Bot", *bot.ID)
 
 	err := c.Bots[*bot.ID].Destroy()
@@ -163,7 +162,7 @@ func (c *Cache) DeleteBot(bot utils.IBot) {
 	delete(c.Bots, *bot.ID)
 }
 
-func (c *Cache) UpdateBot(bot utils.IBot) {
+func (c *Cache) UpdateBot(bot types.Bot) {
 	log.Println("Update Bot", *bot.ID)
 
 	c.Bots[*bot.ID].Bot = bot

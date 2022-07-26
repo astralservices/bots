@@ -5,17 +5,15 @@ import (
 	"math/rand"
 	"time"
 
-	bot "github.com/astralservices/bots/packages/commands/bot"
-	fun "github.com/astralservices/bots/packages/commands/fun"
-	moderation "github.com/astralservices/bots/packages/commands/moderation"
-	"github.com/astralservices/bots/packages/middlewares"
-	"github.com/astralservices/bots/utils"
+	bot "github.com/astralservices/bots/pkg/commands/bot"
+	"github.com/astralservices/bots/pkg/types"
+	"github.com/astralservices/bots/pkg/utils"
+	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
-	"github.com/zekroTJA/shireikan"
 )
 
 type Bot struct {
-	Bot     utils.IBot
+	Bot     types.Bot
 	Session *discordgo.Session
 
 	statusInterval chan int
@@ -41,36 +39,16 @@ func (i *Bot) Initialize() {
 	i.setStatus()
 	go i.updateStatusLoop()
 
-	handler := shireikan.New(&shireikan.Config{
-		GeneralPrefix:         i.Bot.Settings.Prefix,
-		AllowBots:             false,
-		AllowDM:               false,
-		ExecuteOnEdit:         true,
-		InvokeToLower:         true,
-		UseDefaultHelpCommand: false,
-		OnError: func(ctx shireikan.Context, typ shireikan.ErrorType, err error) {
-			utils.ErrorHandler(err)
-		},
+	router := dgc.Create(&dgc.Router{
+		Prefixes: []string{i.Bot.Settings.Prefix},
 	})
 
-	// Register middlewares
-	handler.Register(&middlewares.Bot{Settings: i.Bot})
-	handler.Register(&middlewares.PermissionsMiddleware{})
+	router.InitializeStorage(*i.Bot.ID)
+	router.Storage[*i.Bot.ID].Set("self", i.Bot)
 
-	// Register commands
-	handler.Register(&bot.Ping{})
-	handler.Register(&bot.Help{})
-	handler.Register(&bot.Region{})
-	handler.Register(&bot.Info{})
+	router.RegisterCmd(&bot.Ping)
 
-	handler.Register(&fun.Eightball{})
-	// any reddit-related commands need to be removed for now
-	// handler.Register(&fun.Cat{})
-
-	handler.Register(&moderation.Ban{})
-
-	// Setup command handler
-	handler.Setup(s)
+	router.Initialize(s)
 }
 
 func (i *Bot) Destroy() error {

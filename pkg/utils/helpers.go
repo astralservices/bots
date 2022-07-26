@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/astralservices/bots/utils/constants"
+	"github.com/astralservices/bots/pkg/constants"
+	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
 	"github.com/nedpals/supabase-go"
-	"github.com/zekroTJA/shireikan"
 )
 
 const (
@@ -25,20 +25,20 @@ const (
 	CategoryWeb        = "Web"
 )
 
-func GenerateEmbed(ctx shireikan.Context, e discordgo.MessageEmbed) *discordgo.MessageEmbed {
+func GenerateEmbed(ctx dgc.Ctx, e discordgo.MessageEmbed) *discordgo.MessageEmbed {
 	embed := discordgo.MessageEmbed{
 		Title:       e.Title,
 		Description: e.Description,
 		Fields:      e.Fields,
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:    ctx.GetUser().Username,
-			IconURL: ctx.GetUser().AvatarURL("48"),
+			Name:    ctx.Event.Author.Username,
+			IconURL: ctx.Event.Author.AvatarURL("48"),
 		},
 		Footer: &discordgo.MessageEmbedFooter{
 			Text:    "Astral Bots " + constants.VERSION,
-			IconURL: ctx.GetSession().State.User.AvatarURL("48"),
+			IconURL: ctx.Session.State.User.AvatarURL("48"),
 		},
-		Timestamp: ctx.GetMessage().Timestamp.Format(time.RFC3339),
+		Timestamp: ctx.Event.Timestamp.Format(time.RFC3339),
 	}
 
 	if e.Color != 0 {
@@ -50,19 +50,11 @@ func GenerateEmbed(ctx shireikan.Context, e discordgo.MessageEmbed) *discordgo.M
 	return &embed
 }
 
-func ErrorEmbed(ctx shireikan.Context, err error) *discordgo.MessageEmbed {
+func ErrorEmbed(ctx dgc.Ctx, err error) *discordgo.MessageEmbed {
 	return GenerateEmbed(ctx, discordgo.MessageEmbed{
 		Title:       "Error",
 		Description: err.Error(),
 		Color:       0xff0000,
-	})
-}
-
-func ReplyWithEmbed(ctx shireikan.Context, embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
-	return ctx.GetSession().ChannelMessageSendComplex(ctx.GetMessage().ChannelID, &discordgo.MessageSend{
-		Content:   "",
-		Embed:     embed,
-		Reference: ctx.GetMessage().Reference(),
 	})
 }
 

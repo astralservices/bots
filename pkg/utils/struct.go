@@ -327,19 +327,6 @@ type IRobloxSchemaWallFilter struct {
 	BannedPhrases orderedjson.Map `json:"bannedPhrases"`
 }
 
-type IBotModerationAction struct {
-	ID        *string    `json:"id,omitempty"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	Bot       string     `json:"bot"`
-	Guild     string     `json:"guild"`
-	Action    string     `json:"action"`
-	Moderator string     `json:"moderator"`
-	Reason    string     `json:"reason"`
-	Expires   bool       `json:"expires"`
-	Expiry    time.Time  `json:"expiry"`
-	User      string     `json:"user"`
-}
-
 type IDiscordApiUser struct {
 	ID            string  `json:"id"`
 	Username      string  `json:"username"`
