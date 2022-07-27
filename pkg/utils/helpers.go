@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/astralservices/bots/pkg/constants"
+	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
-	"github.com/nedpals/supabase-go"
 )
 
 const (
@@ -78,20 +78,14 @@ func IsAdmin(g *discordgo.Guild, m *discordgo.Member) bool {
 	return false
 }
 
-func GetUserFromAstralId(s *discordgo.Session, id string, db *supabase.Client) (*discordgo.User, error) {
-	var providers []IProvider
-
-	err := db.DB.From("providers").Select("*").Eq("id", id).Execute(&providers)
+func GetUserFromAstralId(s *discordgo.Session, id string, db db.SupabaseMiddleware) (*discordgo.User, error) {
+	provider, err := db.GetProviderForUser(id, "discord")
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(providers) == 0 {
-		return nil, errors.New("no provider found")
-	}
-
-	return s.User(providers[0].ProviderID)
+	return s.User(provider.ProviderID)
 }
 
 func SortRoles(r []*discordgo.Role, reversed bool) {

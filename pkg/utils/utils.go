@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 	"sort"
 	"time"
 
@@ -142,4 +143,23 @@ func ConvertStringToActivityType(in string) discordgo.ActivityType {
 		return discordgo.ActivityTypeCompeting
 	}
 	return discordgo.ActivityTypeGame
+}
+
+type MemoryUsage struct {
+	Allocated      string
+	AllocatedTotal string
+	Sys            string
+}
+
+func GetMemoryUsage() MemoryUsage {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	mu := MemoryUsage{
+		Allocated:      fmt.Sprintf("%.2f MB", float64(m.Alloc)/1024/1024),
+		AllocatedTotal: fmt.Sprintf("%.2f MB", float64(m.TotalAlloc)/1024/1024),
+		Sys:            fmt.Sprintf("%.2f MB", float64(m.Sys)/1024/1024),
+	}
+
+	return mu
 }

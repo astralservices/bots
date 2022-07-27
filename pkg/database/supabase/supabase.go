@@ -25,6 +25,12 @@ func (s SupabaseMiddleware) GetAllBotsForRegion(region string) ([]types.Bot, err
 	return bots, err
 }
 
+func (s SupabaseMiddleware) GetRegion(region string) (types.Region, error) {
+	var regionData types.Region
+	err := s.Supabase.DB.From("regions").Select("*").Single().Eq("id", region).Execute(&regionData)
+	return regionData, err
+}
+
 func (m *SupabaseMiddleware) GetBot(botID string) (types.Bot, error) {
 	var bot types.Bot
 	err := m.Supabase.DB.From("bots").Select("*").Single().Eq("id", botID).Execute(&bot)
@@ -85,4 +91,10 @@ func (m *SupabaseMiddleware) GetReportsFiltered(guildID string, filter types.Rep
 
 func (m *SupabaseMiddleware) UpdateReport(report types.Report) error {
 	return m.Supabase.DB.From("moderation_actions").Update(report).Eq("id", *report.ID).Execute(nil)
+}
+
+func (m *SupabaseMiddleware) GetProviderForUser(userID string, providerID string) (types.Provider, error) {
+	var provider types.Provider
+	err := m.Supabase.DB.From("providers").Select("*").Single().Eq("user", userID).Eq("id", providerID).Execute(&provider)
+	return provider, err
 }

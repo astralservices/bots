@@ -6,6 +6,7 @@ import (
 	"time"
 
 	bot "github.com/astralservices/bots/pkg/commands/bot"
+	"github.com/astralservices/bots/pkg/middlewares"
 	"github.com/astralservices/bots/pkg/types"
 	"github.com/astralservices/bots/pkg/utils"
 	"github.com/astralservices/dgc"
@@ -46,7 +47,13 @@ func (i *Bot) Initialize() {
 	router.InitializeStorage(*i.Bot.ID)
 	router.Storage[*i.Bot.ID].Set("self", i.Bot)
 
-	router.RegisterCmd(&bot.Ping)
+	botMiddleware := middlewares.Bot{Bot: i.Bot}
+
+	router.RegisterMiddleware(botMiddleware.BotMiddleware)
+
+	router.RegisterCmd(bot.Ping)
+	router.RegisterCmd(bot.Help)
+	router.RegisterCmd(bot.Info)
 
 	router.Initialize(s)
 }

@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/astralservices/bots/packages/permissions"
-	db "github.com/astralservices/bots/supabase"
-	"github.com/astralservices/bots/utils"
+	db "github.com/astralservices/bots/pkg/database/supabase"
+	"github.com/astralservices/bots/pkg/permissions"
+	"github.com/astralservices/bots/pkg/types"
+	"github.com/astralservices/bots/pkg/utils"
+	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
-	"github.com/nedpals/supabase-go"
 
 	"github.com/zekroTJA/shireikan"
 )
@@ -20,38 +21,45 @@ import (
 // Implements the shireikan.Middleware interface and
 // exposes functions to check permissions.
 type PermissionsMiddleware struct {
-	db  *supabase.Client
-	cfg *utils.IBot
+	db  *db.SupabaseMiddleware
+	cfg *types.Bot
 }
 
-func (m *PermissionsMiddleware) Handle(cmd shireikan.Command, ctx shireikan.Context, layer shireikan.MiddlewareLayer) (next bool, err error) {
-	if m.db == nil {
-		m.db = db.New()
+func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionHandler {
+	return func(ctx *dgc.Ctx) {
+		if m.db == nil {
+			db := db.New()
+			m.db = &db
+		}
+
+		if m.cfg == nil {
+			cfg := ctx.CustomObjects.MustGet("self").(*types.Bot)
+
+			m.cfg = cfg
+		}
+
+		guildID := ctx.Event.Message.GuildID
+
+		ok, _, err := m.CheckPermissions(ctx.Session, guildID, ctx.Message.Author.ID, ctx.Command.Domain)
+
+		if err != nil {
+			err := ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, errors.New("Error while checking permissions")))
+			if err != nil {
+				utils.ErrorHandler(err)
+			}
+			return
+		}
+
+		if !ok {
+			err := ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, errors.New("You are not allowed to execute this command.")))
+			if err != nil {
+				utils.ErrorHandler(err)
+			}
+			return
+		}
+
+		next(ctx)
 	}
-
-	if m.cfg == nil {
-		cfg := ctx.GetObject("bot").(utils.IBot)
-
-		m.cfg = &cfg
-	}
-
-	var guildID string
-	if ctx.GetGuild() != nil {
-		guildID = ctx.GetGuild().ID
-	}
-
-	ok, _, err := m.CheckPermissions(ctx.GetSession(), guildID, ctx.GetUser().ID, cmd.GetDomainName())
-
-	if err != nil {
-		return false, err
-	}
-
-	if !ok {
-		utils.ReplyWithEmbed(ctx, utils.ErrorEmbed(ctx, errors.New("You are not allowed to execute this command.")))
-		return false, nil
-	}
-
-	return true, nil
 }
 
 func (m *PermissionsMiddleware) GetLayer() shireikan.MiddlewareLayer {
@@ -73,7 +81,7 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 		perm = make(permissions.PermissionArray, 0)
 	}
 
-	discordUser, err := utils.GetUserFromAstralId(s, *m.cfg.Owner, m.db)
+	discordUser, err := utils.GetUserFromAstralId(s, *m.cfg.Owner, *m.db)
 
 	log.Println(discordUser.ID, userID)
 

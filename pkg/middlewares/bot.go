@@ -1,22 +1,18 @@
 package middlewares
 
 import (
-	"github.com/astralservices/bots/utils"
-	"github.com/zekroTJA/shireikan"
+	"github.com/astralservices/bots/pkg/types"
+	"github.com/astralservices/dgc"
 )
 
 type Bot struct {
-	Settings utils.IBot
+	Bot types.Bot
 }
 
-// Handle is the Middlewares handler.
-func (m *Bot) Handle(cmd shireikan.Command, ctx shireikan.Context, layer shireikan.MiddlewareLayer) (bool, error) {
-	ctx.SetObject("bot", m.Settings)
+func (b *Bot) BotMiddleware(next dgc.ExecutionHandler) dgc.ExecutionHandler {
+	return func(ctx *dgc.Ctx) {
+		ctx.CustomObjects.Set("self", b.Bot)
 
-	return true, nil
-}
-
-// GetLayer returns the execution layer.
-func (m *Bot) GetLayer() shireikan.MiddlewareLayer {
-	return shireikan.LayerBeforeCommand
+		next(ctx)
+	}
 }
