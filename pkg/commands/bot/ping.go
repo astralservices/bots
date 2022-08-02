@@ -17,7 +17,7 @@ var Ping = &dgc.Command{
 	Name:        "ping",
 	Domain:      "astral.bot.ping",
 	Aliases:     []string{"ping", "p"},
-	Description: "Ping!",
+	Description: "Retrieves the bot's API and gateway latency to Discord's servers.",
 	Category:    "Bot",
 	Usage:       "ping",
 	Slash:       true,

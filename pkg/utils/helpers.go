@@ -47,6 +47,10 @@ func GenerateEmbed(ctx dgc.Ctx, e discordgo.MessageEmbed) *discordgo.MessageEmbe
 		embed.Color = 0x4f4bfe
 	}
 
+	if e.Image != nil {
+		embed.Image = e.Image
+	}
+
 	return &embed
 }
 

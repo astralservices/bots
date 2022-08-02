@@ -181,7 +181,7 @@ func (s *Subreddit) RandomHot() (*RedditPost, error) {
 	}
 
 	if resp.StatusCode() != 200 {
-		return nil, errors.New("Error fetching random post")
+		return nil, errors.New("Error fetching random post: " + resp.String())
 	}
 
 	var posts RedditResponseElement

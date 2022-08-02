@@ -5,7 +5,7 @@ import (
 
 	"github.com/astralservices/bots/pkg/database"
 	"github.com/astralservices/bots/pkg/types"
-	"github.com/nedpals/supabase-go"
+	"github.com/grid-rbx/supabase-go"
 )
 
 type SupabaseMiddleware struct {
@@ -21,52 +21,55 @@ func New() SupabaseMiddleware {
 
 func (s SupabaseMiddleware) GetAllBotsForRegion(region string) ([]types.Bot, error) {
 	var bots []types.Bot
-	err := s.Supabase.DB.From("bots").Select("*").Eq("region", region).Execute(&bots)
+	_, err := s.Supabase.DB.From("bots").Select("*", "", false).Eq("region", region).ExecuteTo(&bots)
 	return bots, err
 }
 
 func (s SupabaseMiddleware) GetRegion(region string) (types.Region, error) {
 	var regionData types.Region
-	err := s.Supabase.DB.From("regions").Select("*").Single().Eq("id", region).Execute(&regionData)
+	_, err := s.Supabase.DB.From("regions").Select("*", "", false).Single().Eq("id", region).ExecuteTo(&regionData)
 	return regionData, err
 }
 
 func (m *SupabaseMiddleware) GetBot(botID string) (types.Bot, error) {
 	var bot types.Bot
-	err := m.Supabase.DB.From("bots").Select("*").Single().Eq("id", botID).Execute(&bot)
+	_, err := m.Supabase.DB.From("bots").Select("*", "", false).Single().Eq("id", botID).ExecuteTo(&bot)
 	return bot, err
 }
 
 func (m *SupabaseMiddleware) SetBot(botID string, settings types.Bot) error {
-	return m.Supabase.DB.From("bots").Update(settings).Eq("id", botID).Execute(nil)
+	_, err := m.Supabase.DB.From("bots").Update(settings, "", "").Eq("id", botID).ExecuteTo(nil)
+	return err
 }
 
 func (m *SupabaseMiddleware) AddReport(report types.Report) error {
-	return m.Supabase.DB.From("moderation_actions").Insert(report).Execute(nil)
+	_, err := m.Supabase.DB.From("moderation_actions").Insert(report, false, "", "", "").ExecuteTo(nil)
+	return err
 }
 
 func (m *SupabaseMiddleware) DeleteReport(reportID string) error {
-	return m.Supabase.DB.From("moderation_actions").Delete().Eq("id", reportID).Execute(nil)
+	_, err := m.Supabase.DB.From("moderation_actions").Delete("", "").Eq("id", reportID).ExecuteTo(nil)
+	return err
 }
 
 func (m *SupabaseMiddleware) GetReport(reportID string) (types.Report, error) {
 	var report types.Report
-	err := m.Supabase.DB.From("moderation_actions").Select("*").Single().Eq("id", reportID).Execute(&report)
+	_, err := m.Supabase.DB.From("moderation_actions").Select("*", "", false).Single().Eq("id", reportID).ExecuteTo(&report)
 	return report, err
 }
 
 func (m *SupabaseMiddleware) GetReports(guildID string) ([]types.Report, error) {
 	var reports []types.Report
-	err := m.Supabase.DB.From("moderation_actions").Select("*").Eq("guild", guildID).Execute(&reports)
+	_, err := m.Supabase.DB.From("moderation_actions").Select("*", "", false).Eq("guild", guildID).ExecuteTo(&reports)
 	return reports, err
 }
 
 func (m *SupabaseMiddleware) GetReportsFiltered(guildID string, filter types.ReportFilter) ([]types.Report, error) {
 	var reports []types.Report
-	sel := m.Supabase.DB.From("moderation_actions").Select("*")
-
+	sel := m.Supabase.DB.From("moderation_actions").Select("*", "", false)
 	if filter.Page > 0 && filter.Size > 0 {
-		sel = sel.LimitWithOffset(filter.Size, filter.Page*filter.Size)
+		from, to := database.GetPagination(filter.Page, filter.Size)
+		sel = sel.Range(from, to, "")
 	}
 
 	query := sel.Eq("guild", guildID)
@@ -84,17 +87,18 @@ func (m *SupabaseMiddleware) GetReportsFiltered(guildID string, filter types.Rep
 		query = query.Eq("expired", "true")
 	}
 
-	err := query.Execute(&reports)
+	_, err := query.ExecuteTo(&reports)
 
 	return reports, err
 }
 
 func (m *SupabaseMiddleware) UpdateReport(report types.Report) error {
-	return m.Supabase.DB.From("moderation_actions").Update(report).Eq("id", *report.ID).Execute(nil)
+	_, err := m.Supabase.DB.From("moderation_actions").Update(report, "", "").Eq("id", *report.ID).ExecuteTo(nil)
+	return err
 }
 
 func (m *SupabaseMiddleware) GetProviderForUser(userID string, providerID string) (types.Provider, error) {
 	var provider types.Provider
-	err := m.Supabase.DB.From("providers").Select("*").Single().Eq("user", userID).Eq("id", providerID).Execute(&provider)
+	_, err := m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("id", userID).Eq("type", providerID).ExecuteTo(&provider)
 	return provider, err
 }

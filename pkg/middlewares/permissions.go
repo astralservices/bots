@@ -2,8 +2,6 @@ package middlewares
 
 import (
 	"errors"
-	"fmt"
-	"log"
 
 	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/bots/pkg/permissions"
@@ -21,8 +19,11 @@ import (
 // Implements the shireikan.Middleware interface and
 // exposes functions to check permissions.
 type PermissionsMiddleware struct {
-	db  *db.SupabaseMiddleware
-	cfg *types.Bot
+	Bot types.Bot
+
+	db    *db.SupabaseMiddleware
+	cfg   *types.Bot
+	cache map[string]permissions.PermissionArray
 }
 
 func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionHandler {
@@ -33,9 +34,7 @@ func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionH
 		}
 
 		if m.cfg == nil {
-			cfg := ctx.CustomObjects.MustGet("self").(*types.Bot)
-
-			m.cfg = cfg
+			m.cfg = &m.Bot
 		}
 
 		guildID := ctx.Event.Message.GuildID
@@ -72,6 +71,14 @@ func (m *PermissionsMiddleware) GetLayer() shireikan.MiddlewareLayer {
 // which is true when the specified user is the bot owner,
 // guild owner or an admin of the guild.
 func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, userID string) (perm permissions.PermissionArray, overrideExplicits bool, err error) {
+	if m.cache == nil {
+		m.cache = make(map[string]permissions.PermissionArray)
+	}
+
+	if p, ok := m.cache[userID]; ok {
+		return p, false, nil
+	}
+
 	if guildID != "" {
 		perm, err = m.GetMemberPermission(s, guildID, userID)
 		if err != nil {
@@ -82,8 +89,6 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 	}
 
 	discordUser, err := utils.GetUserFromAstralId(s, *m.cfg.Owner, *m.db)
-
-	log.Println(discordUser.ID, userID)
 
 	if err != nil {
 		return nil, false, err
@@ -116,7 +121,7 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 
 	perm = perm.Merge(defUserRoles, false)
 
-	fmt.Printf("%+v\n", perm)
+	m.cache[userID] = perm
 
 	return perm, overrideExplicits, nil
 }

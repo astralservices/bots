@@ -58,10 +58,10 @@ type BotModule[T any] struct {
 }
 
 type BotAnalytics struct {
-	ID        *int        `json:"id,omitempty"`
-	Commands  interface{} `json:"commands"`
-	Timestamp time.Time   `json:"timestamp"`
-	Members   int         `json:"members"`
-	Messages  int         `json:"messages"`
-	Bot       *Bot        `json:"bot,omitempty"`
+	ID        *int           `json:"id,omitempty"`
+	Commands  map[string]int `json:"commands"`
+	Timestamp time.Time      `json:"timestamp"`
+	Members   int            `json:"members"`
+	Messages  int            `json:"messages"`
+	Bot       *Bot           `json:"bot,omitempty"`
 }

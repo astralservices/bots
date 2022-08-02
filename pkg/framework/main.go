@@ -6,6 +6,8 @@ import (
 	"time"
 
 	bot "github.com/astralservices/bots/pkg/commands/bot"
+	fun "github.com/astralservices/bots/pkg/commands/fun"
+	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/bots/pkg/middlewares"
 	"github.com/astralservices/bots/pkg/types"
 	"github.com/astralservices/bots/pkg/utils"
@@ -18,6 +20,10 @@ type Bot struct {
 	Session *discordgo.Session
 
 	statusInterval chan int
+
+	analyticsCache  types.BotAnalytics
+	analyticsSync   chan bool
+	analyticsTicker *time.Ticker
 }
 
 func (i *Bot) Initialize() {
@@ -48,14 +54,48 @@ func (i *Bot) Initialize() {
 	router.Storage[*i.Bot.ID].Set("self", i.Bot)
 
 	botMiddleware := middlewares.Bot{Bot: i.Bot}
+	permissionsMiddleware := middlewares.PermissionsMiddleware{Bot: i.Bot}
 
 	router.RegisterMiddleware(botMiddleware.BotMiddleware)
+	router.RegisterMiddleware(i.analyticsMiddleware)
+	router.RegisterMiddleware(permissionsMiddleware.Handle)
 
+	///// BOT COMMANDS /////
 	router.RegisterCmd(bot.Ping)
 	router.RegisterCmd(bot.Help)
 	router.RegisterCmd(bot.Info)
+	router.RegisterCmd(bot.Region)
+
+	///// FUN COMMANDS /////
+	router.RegisterCmd(fun.Eightball)
+	router.RegisterCmd(fun.Cat)
+	router.RegisterCmd(fun.Dog)
 
 	router.Initialize(s)
+
+	s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
+		if m.Author.Bot {
+			return
+		}
+		i.analyticsCache.Messages++
+
+		guild, err := s.GuildWithCounts(m.GuildID)
+
+		if err != nil {
+			utils.ErrorHandler(err)
+		}
+
+		log.Println(guild.ApproximateMemberCount)
+
+		i.analyticsCache.Members = guild.ApproximateMemberCount
+	})
+
+	i.analyticsTicker = time.NewTicker(time.Minute * 10)
+	i.analyticsCache = types.BotAnalytics{
+		Commands: make(map[string]int),
+	}
+
+	go i.updateAnalyticsLoop()
 }
 
 func (i *Bot) Destroy() error {
@@ -104,4 +144,64 @@ func (i *Bot) setStatus() {
 		},
 		Status: i.Bot.Settings.Status,
 	})
+}
+
+func (i *Bot) analyticsMiddleware(next dgc.ExecutionHandler) dgc.ExecutionHandler {
+	return func(ctx *dgc.Ctx) {
+		command := ctx.Command.Domain
+
+		if _, ok := i.analyticsCache.Commands[command]; ok {
+			i.analyticsCache.Commands[command]++
+		} else {
+			if i.analyticsCache.Commands == nil {
+				i.analyticsCache.Commands = make(map[string]int)
+			}
+			i.analyticsCache.Commands[command] = 1
+		}
+
+		next(ctx)
+	}
+}
+
+func (i *Bot) updateAnalyticsLoop() {
+	for {
+		select {
+		case <-i.analyticsSync:
+			i.analyticsTicker.Stop()
+			return
+
+		case <-i.analyticsTicker.C:
+			i.updateAnalytics()
+
+		}
+	}
+}
+
+func (i *Bot) updateAnalytics() {
+	database := db.New()
+
+	log.Printf("Updating analytics for %s", *i.Bot.ID)
+
+	database.Supabase.DB.Rpc("commands_inc", "", map[string]interface{}{
+		"command": i.analyticsCache.Commands,
+		"row_id":  i.Bot.ID,
+	})
+
+	database.Supabase.DB.Rpc("messages_inc", "", map[string]interface{}{
+		"x":      i.analyticsCache.Messages,
+		"row_id": i.Bot.ID,
+	})
+
+	if i.analyticsCache.Members > 0 {
+		database.Supabase.DB.Rpc("members_inc", "", map[string]interface{}{
+			"x":      i.analyticsCache.Members,
+			"row_id": i.Bot.ID,
+		})
+	}
+
+	i.analyticsCache = types.BotAnalytics{
+		Commands: make(map[string]int),
+		Messages: 0,
+		Members:  i.analyticsCache.Members,
+	}
 }
