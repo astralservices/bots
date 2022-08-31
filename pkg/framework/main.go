@@ -70,6 +70,7 @@ func (i *Bot) Initialize() {
 	router.RegisterCmd(fun.Eightball)
 	router.RegisterCmd(fun.Cat)
 	router.RegisterCmd(fun.Dog)
+	router.RegisterCmd(fun.Meme)
 
 	router.Initialize(s)
 
