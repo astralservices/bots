@@ -2,6 +2,7 @@ package db
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/astralservices/bots/pkg/database"
 	"github.com/astralservices/bots/pkg/types"
@@ -101,4 +102,51 @@ func (m *SupabaseMiddleware) GetProviderForUser(userID string, providerID string
 	var provider types.Provider
 	_, err := m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("id", userID).Eq("type", providerID).ExecuteTo(&provider)
 	return provider, err
+}
+
+func (m *SupabaseMiddleware) GetProviderFromDiscord(userID string, providerID string) (types.Provider, error) {
+	var discord, provider types.Provider
+	_, err := m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("provider_id", userID).Eq("type", "discord").ExecuteTo(&discord)
+
+	if err != nil {
+		return types.Provider{}, err
+	}
+
+	if providerID == "discord" {
+		return discord, nil
+	}
+
+	_, err = m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("user", *discord.ID).Eq("type", providerID).ExecuteTo(&provider)
+
+	return provider, err
+}
+
+func (m *SupabaseMiddleware) GetIntegrationDataForUser(userID string, integrationID string, workspaceIntegrationID int) (types.IntegrationData, error) {
+	var integrationData types.IntegrationData
+	_, err := m.Supabase.DB.From("integration_data").Select("*", "", false).Single().Eq("user", userID).Eq("integration", integrationID).Eq("workspaceIntegration", strconv.Itoa(workspaceIntegrationID)).ExecuteTo(&integrationData)
+	return integrationData, err
+}
+
+func (m *SupabaseMiddleware) GetIntegrationDataForWorkspace(workspaceID string, integrationID string) ([]types.IntegrationData, error) {
+	i, err := m.GetIntegrationForWorkspace(integrationID, workspaceID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var integrationData []types.IntegrationData
+	_, err = m.Supabase.DB.From("integration_data").Select("*", "", false).Eq("workspaceIntegration", strconv.Itoa(i.ID)).Eq("integration", integrationID).ExecuteTo(&integrationData)
+	return integrationData, err
+}
+
+func (m *SupabaseMiddleware) GetIntegrationForWorkspace(integrationID string, workspaceID string) (types.WorkspaceIntegration, error) {
+	var integration types.WorkspaceIntegration
+	_, err := m.Supabase.DB.From("workspace_integrations").Select("*", "", false).Single().Eq("integration", integrationID).Eq("workspace", workspaceID).ExecuteTo(&integration)
+	return integration, err
+}
+
+func (m *SupabaseMiddleware) GetIntegrationsForWorkspace(workspaceID string) ([]types.WorkspaceIntegration, error) {
+	var integrations []types.WorkspaceIntegration
+	_, err := m.Supabase.DB.From("workspace_integrations").Select("*", "", false).Eq("workspace", workspaceID).ExecuteTo(&integrations)
+	return integrations, err
 }

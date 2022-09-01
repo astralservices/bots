@@ -7,6 +7,8 @@ import (
 
 	bot "github.com/astralservices/bots/pkg/commands/bot"
 	fun "github.com/astralservices/bots/pkg/commands/fun"
+	college "github.com/astralservices/bots/pkg/commands/integrations/college"
+	lastfm "github.com/astralservices/bots/pkg/commands/integrations/lastfm"
 	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/bots/pkg/middlewares"
 	"github.com/astralservices/bots/pkg/types"
@@ -50,8 +52,7 @@ func (i *Bot) Initialize() {
 		Prefixes: []string{i.Bot.Settings.Prefix},
 	})
 
-	router.InitializeStorage(*i.Bot.ID)
-	router.Storage[*i.Bot.ID].Set("self", i.Bot)
+	database := db.New()
 
 	botMiddleware := middlewares.Bot{Bot: i.Bot}
 	permissionsMiddleware := middlewares.PermissionsMiddleware{Bot: i.Bot}
@@ -71,6 +72,46 @@ func (i *Bot) Initialize() {
 	router.RegisterCmd(fun.Cat)
 	router.RegisterCmd(fun.Dog)
 	router.RegisterCmd(fun.Meme)
+	router.RegisterCmd(fun.Rat)
+
+	///// INTEGRATIONS /////
+	/// Register commands ///
+	router.RegisterCmd(college.DormCommand)
+	router.RegisterCmd(college.DormlistCommand)
+	router.RegisterCmd(lastfm.ScrobblesCommand)
+
+	/// Register middleware ///
+	workspaceIntegrations, err := database.GetIntegrationsForWorkspace(*i.Bot.Workspace)
+
+	if err != nil {
+		utils.ErrorHandler(err)
+		panic(err)
+	}
+
+	router.RegisterMiddleware(func(next dgc.ExecutionHandler) dgc.ExecutionHandler {
+		return func(ctx *dgc.Ctx) {
+			ctx.CustomObjects.Set("workspaceIntegrations", workspaceIntegrations)
+
+			if ctx.Command.IntegrationID != "" {
+				for _, integration := range workspaceIntegrations {
+					if integration.Integration == ctx.Command.IntegrationID {
+						if integration.Enabled {
+							next(ctx)
+						} else {
+							ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+								Title:       "Integration Disabled",
+								Description: "This integration is disabled for this workspace.",
+								Color:       0xFF0000,
+							}))
+							return
+						}
+					}
+				}
+			} else {
+				next(ctx)
+			}
+		}
+	})
 
 	router.Initialize(s)
 
@@ -85,8 +126,6 @@ func (i *Bot) Initialize() {
 		if err != nil {
 			utils.ErrorHandler(err)
 		}
-
-		log.Println(guild.ApproximateMemberCount)
 
 		i.analyticsCache.Members = guild.ApproximateMemberCount
 	})

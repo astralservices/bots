@@ -92,6 +92,16 @@ func GetUserFromAstralId(s *discordgo.Session, id string, db db.SupabaseMiddlewa
 	return s.User(provider.ProviderID)
 }
 
+func GetAstralIdFromUser(s *discordgo.Session, user string, db db.SupabaseMiddleware) (string, error) {
+	provider, err := db.GetProviderFromDiscord(user, "discord")
+
+	if err != nil {
+		return "", err
+	}
+
+	return *provider.ID, nil
+}
+
 func SortRoles(r []*discordgo.Role, reversed bool) {
 	var f func(i, j int) bool
 

@@ -49,4 +49,23 @@ type Database interface {
 
 	// GetProviderForUser returns the provider for the given user.
 	GetProviderForUser(userID string, providerID string) (types.Provider, error)
+
+	// GetProviderFromDiscord returns the provider for the given discord user.
+	GetProviderFromDiscord(userID string, providerID string) (types.Provider, error)
+
+	////////////////////////////////////////////////////////////////////////////
+	//// INTEGRATIONS //////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
+
+	// GetIntegrationDataForUser returns the integration data for the given user.
+	GetIntegrationDataForUser(userID string, integrationID string, workspaceIntegrationID int) (types.IntegrationData, error)
+
+	// GetIntegrationDataForWorkspace returns the integration data for the given workspace.
+	GetIntegrationDataForWorkspace(workspaceID string, integrationID string) ([]types.IntegrationData, error)
+
+	// GetIntegrationForWorkspace returns the integration for the given workspace.
+	GetIntegrationForWorkspace(integrationID string, workspaceID string) (types.WorkspaceIntegration, error)
+
+	// GetIntegrationsForWorkspace returns the integrations for the given workspace.
+	GetIntegrationsForWorkspace(workspaceID string) ([]types.WorkspaceIntegration, error)
 }

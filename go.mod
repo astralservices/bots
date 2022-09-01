@@ -9,6 +9,7 @@ require (
 	github.com/grid-rbx/supabase-go v0.2.0 // indirect
 	github.com/mackerelio/go-osstat v0.2.2 // indirect
 	github.com/mlemesle/thecatapi-go v0.0.1 // indirect
+	github.com/shkh/lastfm-go v0.0.0-20191215035245-89a801c244e0 // indirect
 	github.com/supabase-community/storage-go v0.5.7 // indirect
 	github.com/supabase/postgrest-go v0.0.7 // indirect
 	github.com/thexxiv/dogapi-go v1.0.0 // indirect
