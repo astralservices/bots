@@ -68,4 +68,11 @@ type Database interface {
 
 	// GetIntegrationsForWorkspace returns the integrations for the given workspace.
 	GetIntegrationsForWorkspace(workspaceID string) ([]types.WorkspaceIntegration, error)
+
+	////////////////////////////////////////////////////////////////////////////
+	//// STATISTICS ////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
+
+	// GetStatistics returns the statistics for the given bot.
+	GetStatistics(botID string) ([]types.BotAnalytics, error)
 }

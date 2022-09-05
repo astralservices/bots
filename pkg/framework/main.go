@@ -11,6 +11,7 @@ import (
 	lastfm "github.com/astralservices/bots/pkg/commands/integrations/lastfm"
 	mcbroken "github.com/astralservices/bots/pkg/commands/integrations/mcbroken"
 	moderation "github.com/astralservices/bots/pkg/commands/moderation"
+	"github.com/astralservices/bots/pkg/commands/utility"
 	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/bots/pkg/middlewares"
 	"github.com/astralservices/bots/pkg/types"
@@ -83,6 +84,11 @@ func (i *Bot) Initialize() {
 	router.RegisterCmd(moderation.KickCommand)
 	router.RegisterCmd(moderation.MuteCommand)
 	router.RegisterCmd(moderation.UnmuteCommand)
+
+	///// UTILITY /////
+	router.RegisterCmd(utility.ServerInfoCommand)
+	router.RegisterCmd(utility.StatsCommand)
+	router.RegisterCmd(utility.WhoisCommand)
 
 	///// INTEGRATIONS /////
 	/// Register commands ///

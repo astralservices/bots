@@ -63,5 +63,5 @@ type BotAnalytics struct {
 	Timestamp time.Time      `json:"timestamp"`
 	Members   int            `json:"members"`
 	Messages  int            `json:"messages"`
-	Bot       *Bot           `json:"bot,omitempty"`
+	Bot       *string        `json:"bot,omitempty"`
 }

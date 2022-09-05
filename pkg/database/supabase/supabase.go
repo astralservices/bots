@@ -151,3 +151,9 @@ func (m *SupabaseMiddleware) GetIntegrationsForWorkspace(workspaceID string) ([]
 	_, err := m.Supabase.DB.From("workspace_integrations").Select("*", "", false).Eq("workspace", workspaceID).ExecuteTo(&integrations)
 	return integrations, err
 }
+
+func (m *SupabaseMiddleware) GetStatistics(botID string) ([]types.BotAnalytics, error) {
+	var statistics []types.BotAnalytics
+	_, err := m.Supabase.DB.From("bot_analytics").Select("*", "", false).Eq("bot", botID).ExecuteTo(&statistics)
+	return statistics, err
+}
