@@ -4,6 +4,7 @@ import (
 	"errors"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -292,4 +293,76 @@ func FetchMember(s DataOutlet, guildID, resolvable string, condition ...func(*di
 	}
 
 	return nil, errors.New("not found")
+}
+
+var (
+	ErrInvalidDurationFormat = errors.New("invalid duration format")
+
+	rxDuration = regexp.MustCompile(`(?is)^\s*(?:(?P<w>-?\d+)w)?\s*(?:(?P<d>-?\d+)d)?\s*(?:(?P<h>-?\d+)h)?\s*(?:(?P<m>-?\d+)m)?\s*(?:(?P<s>-?\d+)s)?\s*(?:(?P<ms>-?\d+)ms)?\s*(?:(?P<us>-?\d+)[uµ]s)?\s*(?:(?P<ns>-?\d+)ns)?\s*$`)
+)
+
+func ParseDuration(s string) (time.Duration, error) {
+	matches := FindNamedSubmatchMap(rxDuration, s)
+	if len(matches) == 0 {
+		return 0, errors.New("invalid duration format")
+	}
+
+	var d time.Duration
+
+	if wStr, ok := matches["w"]; ok {
+		v, _ := strconv.Atoi(wStr)
+		d += time.Duration(v) * 7 * 24 * time.Hour
+	}
+	if dStr, ok := matches["d"]; ok {
+		v, _ := strconv.Atoi(dStr)
+		d += time.Duration(v) * 24 * time.Hour
+	}
+	if hStr, ok := matches["h"]; ok {
+		v, _ := strconv.Atoi(hStr)
+		d += time.Duration(v) * time.Hour
+	}
+	if mStr, ok := matches["m"]; ok {
+		v, _ := strconv.Atoi(mStr)
+		d += time.Duration(v) * time.Minute
+	}
+	if sStr, ok := matches["s"]; ok {
+		v, _ := strconv.Atoi(sStr)
+		d += time.Duration(v) * time.Second
+	}
+	if msStr, ok := matches["ms"]; ok {
+		v, _ := strconv.Atoi(msStr)
+		d += time.Duration(v) * time.Millisecond
+	}
+	if usStr, ok := matches["us"]; ok {
+		v, _ := strconv.Atoi(usStr)
+		d += time.Duration(v) * time.Microsecond
+	}
+	if nsStr, ok := matches["ns"]; ok {
+		v, _ := strconv.Atoi(nsStr)
+		d += time.Duration(v) * time.Nanosecond
+	}
+
+	return d, nil
+}
+
+func FindNamedSubmatchMap(re *regexp.Regexp, s string) map[string]string {
+	results := make(map[string]string)
+	matches := re.FindStringSubmatch(s)
+	for i, name := range re.SubexpNames() {
+		if i >= len(matches) {
+			break
+		}
+		if i != 0 && i < len(matches) && name != "" && matches[i] != "" {
+			results[name] = matches[i]
+		}
+	}
+	return results
+}
+
+func NowAddPtr(d time.Duration) time.Time {
+	if d <= 0 {
+		return time.Time{}
+	}
+	t := time.Now().UTC().Add(d)
+	return t
 }

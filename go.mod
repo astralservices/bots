@@ -2,17 +2,20 @@ module github.com/astralservices/bots
 
 go 1.18
 
-require github.com/aybabtme/orderedjson v0.1.0
+require (
+	github.com/Ressetkk/dgwidgets v0.3.0
+	github.com/aybabtme/orderedjson v0.1.0
+	github.com/grid-rbx/supabase-go v0.2.0
+	github.com/mackerelio/go-osstat v0.2.2
+	github.com/mlemesle/thecatapi-go v0.0.1
+	github.com/shkh/lastfm-go v0.0.0-20191215035245-89a801c244e0
+	github.com/thexxiv/dogapi-go v1.0.0
+	golang.org/x/text v0.3.7
+)
 
 require (
-	github.com/erlisb/catapi v0.0.0-20211206165353-34ec7af2547c // indirect
-	github.com/grid-rbx/supabase-go v0.2.0 // indirect
-	github.com/mackerelio/go-osstat v0.2.2 // indirect
-	github.com/mlemesle/thecatapi-go v0.0.1 // indirect
-	github.com/shkh/lastfm-go v0.0.0-20191215035245-89a801c244e0 // indirect
 	github.com/supabase-community/storage-go v0.5.7 // indirect
 	github.com/supabase/postgrest-go v0.0.7 // indirect
-	github.com/thexxiv/dogapi-go v1.0.0 // indirect
 )
 
 require (
@@ -33,8 +36,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/joho/godotenv v1.4.0
-	github.com/nedpals/postgrest-go v0.1.3 // indirect
-	github.com/nedpals/supabase-go v0.1.8
 	github.com/overseedio/realtime-go v0.0.0
 	github.com/sarulabs/di/v2 v2.4.2 // indirect
 	github.com/zekroTJA/shireikan v0.7.0

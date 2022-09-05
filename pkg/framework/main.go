@@ -9,6 +9,8 @@ import (
 	fun "github.com/astralservices/bots/pkg/commands/fun"
 	college "github.com/astralservices/bots/pkg/commands/integrations/college"
 	lastfm "github.com/astralservices/bots/pkg/commands/integrations/lastfm"
+	mcbroken "github.com/astralservices/bots/pkg/commands/integrations/mcbroken"
+	moderation "github.com/astralservices/bots/pkg/commands/moderation"
 	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/bots/pkg/middlewares"
 	"github.com/astralservices/bots/pkg/types"
@@ -74,11 +76,22 @@ func (i *Bot) Initialize() {
 	router.RegisterCmd(fun.Meme)
 	router.RegisterCmd(fun.Rat)
 
+	///// MODERATION /////
+	router.RegisterCmd(moderation.BanCommand)
+	router.RegisterCmd(moderation.HistoryCommand)
+	router.RegisterCmd(moderation.CaseCommand)
+	router.RegisterCmd(moderation.KickCommand)
+	router.RegisterCmd(moderation.MuteCommand)
+	router.RegisterCmd(moderation.UnmuteCommand)
+
 	///// INTEGRATIONS /////
 	/// Register commands ///
 	router.RegisterCmd(college.DormCommand)
 	router.RegisterCmd(college.DormlistCommand)
+
 	router.RegisterCmd(lastfm.ScrobblesCommand)
+
+	router.RegisterCmd(mcbroken.McBrokenCommand)
 
 	/// Register middleware ///
 	workspaceIntegrations, err := database.GetIntegrationsForWorkspace(*i.Bot.Workspace)

@@ -30,7 +30,7 @@ type Database interface {
 	////////////////////////////////////////////////////////////////////////////
 
 	// AddReport adds a report to the database.
-	AddReport(report types.Report) error
+	AddReport(report types.Report) (types.Report, error)
 	// DeleteReport deletes a report from the database.
 	DeleteReport(reportID string) error
 	// GetReport returns a report from the database.

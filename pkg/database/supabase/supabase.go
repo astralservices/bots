@@ -43,9 +43,10 @@ func (m *SupabaseMiddleware) SetBot(botID string, settings types.Bot) error {
 	return err
 }
 
-func (m *SupabaseMiddleware) AddReport(report types.Report) error {
-	_, err := m.Supabase.DB.From("moderation_actions").Insert(report, false, "", "", "").ExecuteTo(nil)
-	return err
+func (m *SupabaseMiddleware) AddReport(report types.Report) (types.Report, error) {
+	var newReport types.Report
+	_, err := m.Supabase.DB.From("moderation_actions").Insert(report, false, "", "", "").Single().ExecuteTo(&newReport)
+	return newReport, err
 }
 
 func (m *SupabaseMiddleware) DeleteReport(reportID string) error {

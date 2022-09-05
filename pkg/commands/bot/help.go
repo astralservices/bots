@@ -90,6 +90,11 @@ var Help = &dgc.Command{
 				Value:  "`" + command.Usage + "`",
 				Inline: false,
 			},
+			{
+				Name:   "Example",
+				Value:  "`" + command.Example + "`",
+				Inline: false,
+			},
 		}
 
 		ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, embed))
