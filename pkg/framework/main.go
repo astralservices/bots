@@ -3,6 +3,7 @@ package framework
 import (
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	bot "github.com/astralservices/bots/pkg/commands/bot"
@@ -155,6 +156,9 @@ func (i *Bot) Initialize() {
 	}
 
 	go i.updateAnalyticsLoop()
+
+	i.checkExpiredReports()
+	go i.checkExpiredReportsLoop()
 }
 
 func (i *Bot) Destroy() error {
@@ -262,5 +266,95 @@ func (i *Bot) updateAnalytics() {
 		Commands: make(map[string]int),
 		Messages: 0,
 		Members:  i.analyticsCache.Members,
+	}
+}
+
+func (i *Bot) checkExpiredReports() {
+	database := db.New()
+
+	reports, err := database.GetReportsFiltered(types.ReportFilter{
+		Expired: true,
+		Bot:     *i.Bot.ID,
+	})
+
+	if err != nil {
+		utils.ErrorHandler(err)
+		return
+	}
+
+	for _, report := range reports {
+		switch report.Action {
+		case "ban":
+			{
+				err := i.Session.GuildBanDelete(report.Guild, report.User)
+
+				if err != nil {
+					utils.ErrorHandler(err)
+				}
+			}
+
+		case "mute":
+			{
+				// find the muted role by name
+				// remove the role from the user
+				// if the user is muted through discord, remove the timeout
+
+				guild, err := i.Session.Guild(report.Guild)
+
+				if err != nil {
+					utils.ErrorHandler(err)
+					return
+				}
+
+				// find the muted role
+				var mutedRole *discordgo.Role
+
+				for _, role := range guild.Roles {
+					if strings.Contains(strings.ToLower(role.Name), "muted") {
+						mutedRole = role
+						break
+					}
+				}
+
+				// get the user
+				victim, err := i.Session.GuildMember(report.Guild, report.User)
+
+				if err != nil {
+					utils.ErrorHandler(err)
+					return
+				}
+
+				// remove the role, if the user has it
+				for _, role := range victim.Roles {
+					if role == mutedRole.ID {
+						err := i.Session.GuildMemberRoleRemove(report.Guild, victim.User.ID, mutedRole.ID)
+
+						if err != nil {
+							utils.ErrorHandler(err)
+							return
+						}
+					}
+				}
+
+				// remove the timeout, if the user has one
+				if victim.CommunicationDisabledUntil != nil {
+					err := i.Session.GuildMemberTimeout(report.Guild, victim.User.ID, nil)
+
+					if err != nil {
+						utils.ErrorHandler(err)
+						return
+					}
+				}
+			}
+		}
+
+		log.Println("Removing expired report", report.ID)
+		database.ExpireReport(*report.ID)
+	}
+}
+
+func (i *Bot) checkExpiredReportsLoop() {
+	for range time.Tick(time.Minute) {
+		i.checkExpiredReports()
 	}
 }

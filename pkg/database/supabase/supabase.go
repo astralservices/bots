@@ -3,6 +3,7 @@ package db
 import (
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/astralservices/bots/pkg/database"
 	"github.com/astralservices/bots/pkg/types"
@@ -66,7 +67,7 @@ func (m *SupabaseMiddleware) GetReports(guildID string) ([]types.Report, error) 
 	return reports, err
 }
 
-func (m *SupabaseMiddleware) GetReportsFiltered(guildID string, filter types.ReportFilter) ([]types.Report, error) {
+func (m *SupabaseMiddleware) GetReportsFiltered(filter types.ReportFilter) ([]types.Report, error) {
 	var reports []types.Report
 	sel := m.Supabase.DB.From("moderation_actions").Select("*", "", false)
 	if filter.Page > 0 && filter.Size > 0 {
@@ -74,7 +75,7 @@ func (m *SupabaseMiddleware) GetReportsFiltered(guildID string, filter types.Rep
 		sel = sel.Range(from, to, "")
 	}
 
-	query := sel.Eq("guild", guildID)
+	query := sel
 
 	if filter.Action != "" {
 		query = query.Eq("action", filter.Action)
@@ -86,7 +87,14 @@ func (m *SupabaseMiddleware) GetReportsFiltered(guildID string, filter types.Rep
 		query = query.Eq("user", filter.User)
 	}
 	if filter.Expired {
-		query = query.Eq("expired", "true")
+		// if the expiry date is in the past, it's expired
+		query = query.Lte("expiry", time.Now().Format(time.RFC3339)).Eq("expired", "false")
+	}
+	if filter.Guild != "" {
+		query = query.Eq("guild", filter.Guild)
+	}
+	if filter.Bot != "" {
+		query = query.Eq("bot", filter.Bot)
 	}
 
 	_, err := query.ExecuteTo(&reports)
@@ -97,6 +105,17 @@ func (m *SupabaseMiddleware) GetReportsFiltered(guildID string, filter types.Rep
 func (m *SupabaseMiddleware) UpdateReport(report types.Report) error {
 	_, err := m.Supabase.DB.From("moderation_actions").Update(report, "", "").Eq("id", *report.ID).ExecuteTo(nil)
 	return err
+}
+
+func (m *SupabaseMiddleware) ExpireReport(reportID string) error {
+	report, err := m.GetReport(reportID)
+	if err != nil {
+		return err
+	}
+
+	report.Expired = true
+
+	return m.UpdateReport(report)
 }
 
 func (m *SupabaseMiddleware) GetProviderForUser(userID string, providerID string) (types.Provider, error) {

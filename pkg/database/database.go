@@ -39,9 +39,11 @@ type Database interface {
 	GetReports(guildID string) ([]types.Report, error)
 	// GetReportsFiltered returns all reports from the database for the given guild,
 	// filtered by the given filter.
-	GetReportsFiltered(guildID string, filter types.ReportFilter) ([]types.Report, error)
+	GetReportsFiltered(filter types.ReportFilter) ([]types.Report, error)
 	// UpdateReport updates a report in the database.
 	UpdateReport(report types.Report) error
+	// ExpireReport expires a report in the database.
+	ExpireReport(reportID string) error
 
 	////////////////////////////////////////////////////////////////////////////
 	//// PROVIDERS /////////////////////////////////////////////////////////////

@@ -43,9 +43,11 @@ var HistoryCommand = &dgc.Command{
 			}
 
 			filter.User = userId
+
+			filter.Guild = ctx.Event.GuildID
 		}
 
-		reports, err := database.GetReportsFiltered(ctx.Message.GuildID, filter)
+		reports, err := database.GetReportsFiltered(filter)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))

@@ -13,9 +13,12 @@ type Report struct {
 	Expires   bool       `json:"expires"`
 	Expiry    time.Time  `json:"expiry"`
 	User      string     `json:"user"`
+	Expired   bool       `json:"expired"`
 }
 
 type ReportFilter struct {
+	Bot       string `json:"bot"`
+	Guild     string `json:"guild"`
 	Action    string `json:"action"`
 	Moderator string `json:"moderator"`
 	User      string `json:"user"`
