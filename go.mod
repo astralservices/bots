@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/astralservices/dgc v1.1.1
+	github.com/astralservices/dgc v1.1.2
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/karrick/tparse/v2 v2.8.2 // indirect
 	github.com/zekroTJA/timedmap v1.4.0 // indirect
@@ -44,5 +44,3 @@ require (
 	golang.org/x/net v0.0.0-20220725212005-46097bf591d3 // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 )
-
-replace github.com/astralservices/dgc v1.1.1 => ../dgc

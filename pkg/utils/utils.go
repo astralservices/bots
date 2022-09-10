@@ -36,7 +36,7 @@ type RealtimePayload[T any] struct {
 }
 
 func (opts RealtimeOptions) SetupRealtime() {
-	c, err := realtimego.NewClient(opts.Endpoint, opts.Key, realtimego.WithUserToken(opts.Key))
+	c, err := realtimego.NewClient(opts.Endpoint, opts.Key, realtimego.WithUserToken(opts.Key), realtimego.WithHeartbeatInterval(2))
 
 	if err != nil {
 		panic(err)
@@ -58,15 +58,9 @@ func (opts RealtimeOptions) SetupRealtime() {
 	}
 
 	// setup hooks
-	ch.OnInsert = func(m realtimego.Message) {
-		opts.OnInsert(m)
-	}
-	ch.OnDelete = func(m realtimego.Message) {
-		opts.OnDelete(m)
-	}
-	ch.OnUpdate = func(m realtimego.Message) {
-		opts.OnUpdate(m)
-	}
+	ch.OnInsert = opts.OnInsert
+	ch.OnDelete = opts.OnDelete
+	ch.OnUpdate = opts.OnUpdate
 
 	// subscribe to channel
 	err = ch.Subscribe()

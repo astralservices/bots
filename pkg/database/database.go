@@ -62,6 +62,9 @@ type Database interface {
 	// GetIntegrationDataForUser returns the integration data for the given user.
 	GetIntegrationDataForUser(userID string, integrationID string, workspaceIntegrationID int) (types.IntegrationData, error)
 
+	// SetIntegrationDataForUser sets the integration data for the given user.
+	SetIntegrationDataForUser(userID string, integrationID string, workspaceIntegrationID int, data any) error
+
 	// GetIntegrationDataForWorkspace returns the integration data for the given workspace.
 	GetIntegrationDataForWorkspace(workspaceID string, integrationID string) ([]types.IntegrationData, error)
 

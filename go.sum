@@ -1,5 +1,7 @@
 github.com/Ressetkk/dgwidgets v0.3.0 h1:cmk7B0WoVt63qZa39NADknCtN2G9xR3jODpcCEpep+o=
 github.com/Ressetkk/dgwidgets v0.3.0/go.mod h1:ESntu+A/2iAvSfFfferq4dw5zeMPnjPWIbTPCFsGDfQ=
+github.com/astralservices/dgc v1.1.2 h1:QjNS7uqmKM5rSI7ePt6tm8CG70+79gj0hfvwJvMwR2Q=
+github.com/astralservices/dgc v1.1.2/go.mod h1:15y9FR7PK6992U/tnhF+6Up/+zAhKQniMkQPN5FmEPc=
 github.com/aybabtme/flatjson v0.1.2 h1:Ct0vkvQoN/Wie2SxyEK30oGQCcFXelEc7hBR9idH+Z8=
 github.com/aybabtme/flatjson v0.1.2/go.mod h1:2oPC+j5XSGNN4+4zllTuLZ4z31CeflutT0Jw3dJBOxE=
 github.com/aybabtme/orderedjson v0.1.0 h1:cWe8j5xRWhP70MmEPTpicyUwG+A/15y+hdhtJpLyWF0=

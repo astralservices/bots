@@ -21,10 +21,12 @@ type Cache struct {
 }
 
 func main() {
-	err := godotenv.Load("./.env")
+	if os.Getenv("ENV") != "production" {
+		err := godotenv.Load("./.env")
 
-	if err != nil {
-		utils.ErrorHandler(err)
+		if err != nil {
+			utils.ErrorHandler(err)
+		}
 	}
 
 	ENDPOINT := os.Getenv("SUPABASE_URL")
@@ -32,7 +34,8 @@ func main() {
 	REGION := os.Getenv("REGION")
 
 	if REGION == "" {
-		REGION, err = os.Hostname()
+		r, err := os.Hostname()
+		REGION = r
 		if err != nil {
 			utils.ErrorHandler(err)
 		}
@@ -44,87 +47,116 @@ func main() {
 		Bots: make(map[string]*framework.Bot),
 	}
 
-	go func() {
-		botsRealtimeOpts := utils.RealtimeOptions{
-			Endpoint: ENDPOINT,
-			Key:      API_KEY,
-			Table:    "bots",
-			OnInsert: func(m realtimego.Message) {
-				var payload utils.RealtimePayload[types.Bot]
+	c, err := realtimego.NewClient(ENDPOINT, API_KEY, realtimego.WithUserToken(API_KEY))
 
-				str, err := json.Marshal(m.Payload)
+	if err != nil {
+		panic(err)
+	}
 
-				if err != nil {
-					utils.ErrorHandler(err)
-				}
+	// connect to server
+	err = c.Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-				err = json.Unmarshal(str, &payload)
-				if err != nil {
-					utils.ErrorHandler(err)
-				}
+	// create and subscribe to channel
+	db := "realtime"
+	schema := "public"
+	table := "bots"
+	ch, err := c.Channel(realtimego.WithTable(&db, &schema, &table))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-				if payload.Record.Region == REGION {
-					cache.AddBot(payload.Record)
-				}
-			},
-			OnDelete: func(m realtimego.Message) {
-				var payload utils.RealtimePayload[types.Bot]
+	// setup hooks
+	ch.OnInsert = func(m realtimego.Message) {
+		var payload utils.RealtimePayload[types.Bot]
 
-				str, err := json.Marshal(m.Payload)
+		str, err := json.Marshal(m.Payload)
 
-				if err != nil {
-					utils.ErrorHandler(err)
-				}
-
-				err = json.Unmarshal(str, &payload)
-				if err != nil {
-					utils.ErrorHandler(err)
-				}
-
-				if payload.Record.Region == REGION {
-					cache.DeleteBot(payload.Record)
-				}
-			},
-			OnUpdate: func(m realtimego.Message) {
-				var payload utils.RealtimePayload[types.Bot]
-
-				str, err := json.Marshal(m.Payload)
-
-				if err != nil {
-					utils.ErrorHandler(err)
-				}
-
-				err = json.Unmarshal(str, &payload)
-				if err != nil {
-					utils.ErrorHandler(err)
-				}
-
-				if payload.OldRecord.Region != payload.Record.Region {
-					if payload.OldRecord.Region == REGION {
-						cache.DeleteBot(payload.OldRecord)
-					} else if payload.Record.Region == REGION {
-						cache.AddBot(payload.Record)
-					}
-				}
-
-				if payload.OldRecord.Settings.CurrentActivity != payload.Record.Settings.CurrentActivity {
-					return // ignore activity changes
-				}
-
-				if payload.Record.Region == REGION {
-					cache.UpdateBot(payload.Record)
-				}
-			},
+		if err != nil {
+			utils.ErrorHandler(err)
 		}
 
-		botsRealtimeOpts.SetupRealtime()
-	}()
+		err = json.Unmarshal(str, &payload)
+		if err != nil {
+			utils.ErrorHandler(err)
+		}
+
+		if payload.Record.Region == REGION {
+			cache.AddBot(payload.Record)
+		}
+	}
+	ch.OnDelete = func(m realtimego.Message) {
+		var payload utils.RealtimePayload[types.Bot]
+
+		str, err := json.Marshal(m.Payload)
+
+		if err != nil {
+			utils.ErrorHandler(err)
+			return
+		}
+
+		err = json.Unmarshal(str, &payload)
+		if err != nil {
+			utils.ErrorHandler(err)
+			return
+		}
+
+		if payload.Record.Region == REGION {
+			cache.DeleteBot(payload.Record)
+		}
+	}
+	ch.OnUpdate = func(m realtimego.Message) {
+		var payload utils.RealtimePayload[types.Bot]
+
+		str, err := json.Marshal(m.Payload)
+
+		if err != nil {
+			utils.ErrorHandler(err)
+			return
+		}
+
+		err = json.Unmarshal(str, &payload)
+		if err != nil {
+			utils.ErrorHandler(err)
+			return
+		}
+
+		if payload.OldRecord.Settings.CurrentActivity != payload.Record.Settings.CurrentActivity {
+			return // ignore activity changes
+		}
+
+		if payload.OldRecord.Region != payload.Record.Region {
+			if payload.OldRecord.Region == REGION {
+				cache.DeleteBot(payload.OldRecord)
+				return
+			} else if payload.Record.Region == REGION {
+				cache.AddBot(payload.Record)
+				return
+			}
+		}
+
+		if payload.Record.Region == REGION {
+			cache.UpdateBot(payload.Record)
+		}
+	}
+
+	// subscribe to channel
+	err = ch.Subscribe()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	sentry.Init(sentry.ClientOptions{
 		Dsn: "https://681b6c2ca26a4c258e77a0068c84404f@gt.astralapp.io/4",
 	})
 
 	bots, err := database.GetAllBotsForRegion(REGION)
+
+	if err != nil {
+		utils.ErrorHandler(err)
+	}
 
 	for _, bot := range bots {
 		cache.AddBot(bot)
@@ -167,5 +199,9 @@ func (c *Cache) UpdateBot(bot types.Bot) {
 
 	c.Bots[*bot.ID].Bot = bot
 
-	c.Bots[*bot.ID].Update()
+	err := c.Bots[*bot.ID].Update()
+
+	if err != nil {
+		utils.ErrorHandler(err)
+	}
 }

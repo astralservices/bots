@@ -26,7 +26,7 @@ type Integration struct {
 
 type IntegrationData struct {
 	ID                   int    `json:"id"`
-	CreatedAt            string `json:"createdAt"`
+	CreatedAt            string `json:"created_at"`
 	Integration          string `json:"integration"`
 	WorkspaceIntegration int    `json:"workspaceIntegration"`
 	User                 string `json:"user"`

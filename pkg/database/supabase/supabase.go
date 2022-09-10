@@ -147,6 +147,18 @@ func (m *SupabaseMiddleware) GetIntegrationDataForUser(userID string, integratio
 	return integrationData, err
 }
 
+func (m *SupabaseMiddleware) SetIntegrationDataForUser(userID string, integrationID string, workspaceIntegrationID int, data any) error {
+	i, err := m.GetIntegrationDataForUser(userID, integrationID, workspaceIntegrationID)
+	if err != nil {
+		return err
+	}
+
+	i.Data = data
+
+	_, err = m.Supabase.DB.From("integration_data").Update(i, "", "").Eq("user", userID).Eq("integration", integrationID).Eq("workspaceIntegration", strconv.Itoa(workspaceIntegrationID)).ExecuteTo(nil)
+	return err
+}
+
 func (m *SupabaseMiddleware) GetIntegrationDataForWorkspace(workspaceID string, integrationID string) ([]types.IntegrationData, error) {
 	i, err := m.GetIntegrationForWorkspace(integrationID, workspaceID)
 

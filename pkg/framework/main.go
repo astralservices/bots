@@ -40,11 +40,17 @@ func (i *Bot) Initialize() {
 
 	if err != nil {
 		utils.ErrorHandler(err)
+		log.Println("Error creating DiscordGo session, destroying bot")
+		i.Destroy()
+		return
 	}
 
 	err = s.Open()
 	if err != nil {
 		utils.ErrorHandler(err)
+		log.Println("Could not open connection, destroying bot")
+		i.Destroy()
+		return
 	}
 
 	i.Session = s
@@ -95,6 +101,7 @@ func (i *Bot) Initialize() {
 	/// Register commands ///
 	router.RegisterCmd(college.DormCommand)
 	router.RegisterCmd(college.DormlistCommand)
+	router.RegisterCmd(college.SetDormCommand)
 
 	router.RegisterCmd(lastfm.ScrobblesCommand)
 
@@ -162,6 +169,9 @@ func (i *Bot) Initialize() {
 }
 
 func (i *Bot) Destroy() error {
+	if i.Session == nil {
+		return nil
+	}
 	if err := i.Session.Close(); err != nil {
 		utils.ErrorHandler(err)
 		return err
