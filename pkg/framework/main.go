@@ -207,7 +207,28 @@ func (i *Bot) setStatus() {
 		if i.Bot.Settings.RandomizeActivities {
 			selectedActivity = activities[rand.Intn(len(activities))]
 		} else {
-			selectedActivity = activities[i.Bot.Settings.CurrentActivity]
+			currentActivityIndex := i.Bot.Settings.CurrentActivity
+
+			if currentActivityIndex == -1 {
+				currentActivityIndex = 0
+			} else {
+				currentActivityIndex = currentActivityIndex + 1
+				if currentActivityIndex >= len(activities) {
+					currentActivityIndex = 0
+				}
+			}
+
+			selectedActivity = activities[currentActivityIndex]
+
+			i.Bot.Settings.CurrentActivity = currentActivityIndex
+
+			database := db.New()
+
+			err := database.SetBot(*i.Bot.ID, i.Bot)
+
+			if err != nil {
+				utils.ErrorHandler(err)
+			}
 		}
 	}
 
