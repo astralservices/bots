@@ -84,7 +84,7 @@ func IsAdmin(g *discordgo.Guild, m *discordgo.Member) bool {
 }
 
 func GetUserFromAstralId(s *discordgo.Session, id string, db db.SupabaseMiddleware) (*discordgo.User, error) {
-	provider, err := db.GetProviderForUser(id, "discord")
+	provider, err := db.GetProviderByID(id)
 
 	if err != nil {
 		return nil, err

@@ -124,6 +124,12 @@ func (m *SupabaseMiddleware) GetProviderForUser(userID string, providerID string
 	return provider, err
 }
 
+func (m *SupabaseMiddleware) GetProviderByID(providerID string) (types.Provider, error) {
+	var provider types.Provider
+	_, err := m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("id", providerID).ExecuteTo(&provider)
+	return provider, err
+}
+
 func (m *SupabaseMiddleware) GetProviderFromDiscord(userID string, providerID string) (types.Provider, error) {
 	var discord, provider types.Provider
 	_, err := m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("provider_id", userID).Eq("type", "discord").ExecuteTo(&discord)

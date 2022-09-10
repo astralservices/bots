@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"errors"
+	"fmt"
 
 	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/bots/pkg/permissions"
@@ -42,7 +42,7 @@ func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionH
 		ok, _, err := m.CheckPermissions(ctx.Session, guildID, ctx.Message.Author.ID, ctx.Command.Domain)
 
 		if err != nil {
-			err := ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, errors.New("Error while checking permissions")))
+			err := ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, fmt.Errorf("Error while checking permissions\nError: %s", err.Error())))
 			if err != nil {
 				utils.ErrorHandler(err)
 			}
@@ -50,7 +50,7 @@ func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionH
 		}
 
 		if !ok {
-			err := ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, errors.New("You are not allowed to execute this command.")))
+			err := ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, fmt.Errorf("You do not have the permission to execute this command")))
 			if err != nil {
 				utils.ErrorHandler(err)
 			}
