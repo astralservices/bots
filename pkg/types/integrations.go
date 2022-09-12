@@ -25,15 +25,27 @@ type Integration struct {
 }
 
 type IntegrationData struct {
-	ID                   int    `json:"id"`
-	CreatedAt            string `json:"created_at"`
-	Integration          string `json:"integration"`
-	WorkspaceIntegration int    `json:"workspaceIntegration"`
-	User                 string `json:"user"`
-	Data                 any    `json:"data"`
+	ID                   int     `json:"id"`
+	CreatedAt            *string `json:"created_at,omitempty"`
+	Integration          string  `json:"integration"`
+	WorkspaceIntegration int     `json:"workspaceIntegration"`
+	User                 string  `json:"user"`
+	Data                 any     `json:"data"`
 }
 
 type CollegeIntegrationData struct {
 	Room  string `json:"room"`
 	House string `json:"house"`
+}
+
+type ReminderIntegrationData struct {
+	Reminders []Reminder `json:"reminders"`
+}
+
+type Reminder struct {
+	UserID         string    `json:"user_id"`
+	Msg            string    `json:"msg"`
+	Time           time.Time `json:"time"`
+	Repeating      bool      `json:"repeating"`
+	RepeatInterval string    `json:"repeat_interval"`
 }

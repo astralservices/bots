@@ -154,14 +154,32 @@ func (m *SupabaseMiddleware) GetIntegrationDataForUser(userID string, integratio
 }
 
 func (m *SupabaseMiddleware) SetIntegrationDataForUser(userID string, integrationID string, workspaceIntegrationID int, data any) error {
-	i, err := m.GetIntegrationDataForUser(userID, integrationID, workspaceIntegrationID)
+	// first check if the integration data already exists
+	var integrationData []types.IntegrationData
+	_, err := m.Supabase.DB.From("integration_data").Select("*", "", false).Eq("user", userID).Eq("integration", integrationID).Eq("workspaceIntegration", strconv.Itoa(workspaceIntegrationID)).ExecuteTo(&integrationData)
+
 	if err != nil {
 		return err
 	}
 
-	i.Data = data
+	if len(integrationData) == 0 {
+		// create new integration data
+		_, err = m.Supabase.DB.From("integration_data").Insert(types.IntegrationData{
+			User:                 userID,
+			Integration:          integrationID,
+			WorkspaceIntegration: workspaceIntegrationID,
+			Data:                 data,
+		}, false, "", "", "").ExecuteTo(nil)
+	} else {
+		// update existing integration data
+		_, err = m.Supabase.DB.From("integration_data").Update(types.IntegrationData{
+			User:                 userID,
+			Integration:          integrationID,
+			WorkspaceIntegration: workspaceIntegrationID,
+			Data:                 data,
+		}, "", "").Eq("user", userID).Eq("integration", integrationID).Eq("workspaceIntegration", strconv.Itoa(workspaceIntegrationID)).ExecuteTo(nil)
+	}
 
-	_, err = m.Supabase.DB.From("integration_data").Update(i, "", "").Eq("user", userID).Eq("integration", integrationID).Eq("workspaceIntegration", strconv.Itoa(workspaceIntegrationID)).ExecuteTo(nil)
 	return err
 }
 

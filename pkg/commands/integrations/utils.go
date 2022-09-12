@@ -1,11 +1,91 @@
 package integrations
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"time"
 
+	"github.com/KrishanBhalla/reminder"
+	"github.com/KrishanBhalla/reminder/schedule"
+	db "github.com/astralservices/bots/pkg/database/supabase"
 	"github.com/astralservices/bots/pkg/types"
 	"github.com/astralservices/dgc"
+	"github.com/bwmarrin/discordgo"
 )
+
+type DiscordNotifier struct {
+	Session  *discordgo.Session
+	Reminder types.Reminder
+	WiID     int
+	UserID   string
+}
+
+func (d *DiscordNotifier) Notify(title, message string) error {
+	c, err := d.Session.UserChannelCreate(d.UserID)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = d.Session.ChannelMessageSendComplex(c.ID, &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:       "Reminder 👆",
+				Description: message,
+				Color:       0x00ff00,
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:  "Why am I getting this?",
+						Value: fmt.Sprintf("You asked me to remind you about this at <t:%d>.", d.Reminder.Time.Unix()),
+					},
+				},
+			},
+		},
+	})
+
+	if !d.Reminder.Repeating {
+		database := db.New()
+
+		iD, err := database.GetIntegrationDataForUser(d.UserID, "3dc87d39-a037-48fa-85b0-0243e6593883", d.WiID)
+
+		if err != nil {
+			return err
+		}
+
+		var reminders types.ReminderIntegrationData
+
+		jsonStr, err := json.Marshal(iD.Data)
+
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(jsonStr, &reminders)
+
+		if err != nil {
+			return err
+		}
+
+		for i, r := range reminders.Reminders {
+			if r.Time == d.Reminder.Time {
+				reminders.Reminders = append(reminders.Reminders[:i], reminders.Reminders[i+1:]...)
+			}
+		}
+
+		err = database.SetIntegrationDataForUser(d.UserID, "3dc87d39-a037-48fa-85b0-0243e6593883", d.WiID, types.ReminderIntegrationData{
+			Reminders: reminders.Reminders,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return err
+}
 
 func GetWorkspaceIntegrationForCommand(ctx *dgc.Ctx, integrationID string) (workspaceIntegrationID int, err error) {
 	data := ctx.CustomObjects.MustGet("workspaceIntegrations")
@@ -19,4 +99,52 @@ func GetWorkspaceIntegrationForCommand(ctx *dgc.Ctx, integrationID string) (work
 	}
 
 	return 0, fmt.Errorf("no workspace integration found for integration %s", integrationID)
+}
+
+func SetupReminders(session *discordgo.Session, self types.Bot) (err error) {
+	database := db.New()
+
+	d, err := database.GetIntegrationDataForWorkspace(*self.Workspace, "3dc87d39-a037-48fa-85b0-0243e6593883")
+
+	if err != nil {
+		return err
+	}
+
+	for _, data := range d {
+		jsonStr, err := json.Marshal(data.Data)
+
+		if err != nil {
+			return err
+		}
+
+		var reminders types.ReminderIntegrationData
+
+		err = json.Unmarshal(jsonStr, &reminders)
+
+		if err != nil {
+			return err
+		}
+
+		for _, r := range reminders.Reminders {
+			s, _ := schedule.NewSchedule(time.RFC1123Z, r.Time.Format(time.RFC1123Z), "UTC")
+
+			notifier := &DiscordNotifier{
+				Session:  session,
+				UserID:   r.UserID,
+				Reminder: r,
+				WiID:     d[0].WorkspaceIntegration,
+			}
+
+			rem := reminder.Reminder{
+				Schedule: s,
+				Notifier: notifier,
+			}
+
+			go rem.Remind(r.UserID, r.Msg)
+
+			log.Println("reminding", r.UserID, "at", r.Time)
+		}
+	}
+
+	return nil
 }
