@@ -48,4 +48,6 @@ type Reminder struct {
 	Time           time.Time `json:"time"`
 	Repeating      bool      `json:"repeating"`
 	RepeatInterval string    `json:"repeat_interval"`
+	MessageID      string    `json:"message_id"`
+	CreatedAt      time.Time `json:"created_at"`
 }

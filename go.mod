@@ -16,6 +16,7 @@ require (
 require (
 	github.com/AlekSi/pointer v1.0.0 // indirect
 	github.com/KrishanBhalla/reminder v0.0.0-20210212191000-f4f8df4d9119 // indirect
+	github.com/carlescere/scheduler v0.0.0-20170109141437-ee74d2f83d82 // indirect
 	github.com/cschomburg/go-pushbullet v0.0.0-20171206132031-67759df45fbb // indirect
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect

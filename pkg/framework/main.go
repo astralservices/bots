@@ -114,6 +114,9 @@ func (i *Bot) Initialize() {
 	router.RegisterCmd(mcbroken.McBrokenCommand)
 
 	router.RegisterCmd(reminders.RemindCommand)
+	router.RegisterCmd(reminders.RemindRepeatCommand)
+	router.RegisterCmd(reminders.ListRemindersCommand)
+	router.RegisterCmd(reminders.DeleteReminderCommand)
 	err = integrations.SetupReminders(i.Session, i.Bot)
 
 	if err != nil {

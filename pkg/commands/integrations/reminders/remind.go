@@ -15,8 +15,6 @@ import (
 	"github.com/astralservices/bots/pkg/utils"
 	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
-	"github.com/olebedev/when"
-	"github.com/olebedev/when/rules/en"
 )
 
 var ReminderIntegrationID = "3dc87d39-a037-48fa-85b0-0243e6593883"
@@ -33,9 +31,6 @@ var RemindCommand = &dgc.Command{
 	Slash:         true,
 	SlashGuilds:   []string{os.Getenv("DEV_GUILD")},
 	Handler: func(ctx *dgc.Ctx) {
-		w := when.New(nil)
-		w.Add(en.All...)
-
 		// Get the time
 		duration, err := utils.ParseDuration(ctx.Arguments.Get(1).Raw())
 
@@ -85,9 +80,12 @@ var RemindCommand = &dgc.Command{
 		var reminders []types.Reminder
 
 		re := types.Reminder{
-			Time:   t,
-			Msg:    msg,
-			UserID: user,
+			Time:      t,
+			Msg:       msg,
+			UserID:    user,
+			Repeating: false,
+			MessageID: ctx.Event.ID,
+			CreatedAt: time.Now(),
 		}
 
 		if iD.Data != nil {

@@ -3,7 +3,6 @@ package integrations
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/KrishanBhalla/reminder"
@@ -12,6 +11,7 @@ import (
 	"github.com/astralservices/bots/pkg/types"
 	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
+	"github.com/carlescere/scheduler"
 )
 
 type DiscordNotifier struct {
@@ -28,6 +28,12 @@ func (d *DiscordNotifier) Notify(title, message string) error {
 		return err
 	}
 
+	valueStr := fmt.Sprintf("You asked me to remind you about this at <t:%d>.", d.Reminder.Time.Unix())
+
+	if d.Reminder.Repeating {
+		valueStr = fmt.Sprintf("You asked me to remind you about this every `%s` starting <t:%d>.", d.Reminder.RepeatInterval, d.Reminder.CreatedAt.Unix())
+	}
+
 	_, err = d.Session.ChannelMessageSendComplex(c.ID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
@@ -37,7 +43,7 @@ func (d *DiscordNotifier) Notify(title, message string) error {
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "Why am I getting this?",
-						Value: fmt.Sprintf("You asked me to remind you about this at <t:%d>.", d.Reminder.Time.Unix()),
+						Value: valueStr,
 					},
 				},
 			},
@@ -68,7 +74,7 @@ func (d *DiscordNotifier) Notify(title, message string) error {
 		}
 
 		for i, r := range reminders.Reminders {
-			if r.Time == d.Reminder.Time {
+			if r.MessageID == d.Reminder.MessageID {
 				reminders.Reminders = append(reminders.Reminders[:i], reminders.Reminders[i+1:]...)
 			}
 		}
@@ -135,14 +141,25 @@ func SetupReminders(session *discordgo.Session, self types.Bot) (err error) {
 				WiID:     d[0].WorkspaceIntegration,
 			}
 
-			rem := reminder.Reminder{
-				Schedule: s,
-				Notifier: notifier,
+			if r.Repeating {
+				// convert to duration
+				d, err := time.ParseDuration(r.RepeatInterval)
+
+				if err != nil {
+					return err
+				}
+
+				scheduler.Every(int(d.Seconds())).Seconds().NotImmediately().Run(func() {
+					notifier.Notify(r.UserID, r.Msg)
+				})
+			} else {
+				rem := reminder.Reminder{
+					Schedule: s,
+					Notifier: notifier,
+				}
+
+				go rem.Remind(r.UserID, r.Msg)
 			}
-
-			go rem.Remind(r.UserID, r.Msg)
-
-			log.Println("reminding", r.UserID, "at", r.Time)
 		}
 	}
 
