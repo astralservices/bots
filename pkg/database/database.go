@@ -53,7 +53,7 @@ type Database interface {
 	GetProviderForUser(userID string, providerID string) (types.Provider, error)
 
 	// GetProviderFromDiscord returns the provider for the given discord user.
-	GetProviderFromDiscord(userID string, providerID string) (types.Provider, error)
+	GetProviderFromDiscord(userID string, providerID string) ([]types.Provider, error)
 
 	////////////////////////////////////////////////////////////////////////////
 	//// INTEGRATIONS //////////////////////////////////////////////////////////

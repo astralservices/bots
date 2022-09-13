@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"time"
@@ -130,19 +131,23 @@ func (m *SupabaseMiddleware) GetProviderByID(providerID string) (types.Provider,
 	return provider, err
 }
 
-func (m *SupabaseMiddleware) GetProviderFromDiscord(userID string, providerID string) (types.Provider, error) {
-	var discord, provider types.Provider
-	_, err := m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("provider_id", userID).Eq("type", "discord").ExecuteTo(&discord)
+func (m *SupabaseMiddleware) GetProviderFromDiscord(userID string, providerID string) ([]types.Provider, error) {
+	var discord, provider []types.Provider
+	_, err := m.Supabase.DB.From("providers").Select("*", "", false).Eq("provider_id", userID).Eq("type", "discord").ExecuteTo(&discord)
 
 	if err != nil {
-		return types.Provider{}, err
+		return []types.Provider{}, err
 	}
 
 	if providerID == "discord" {
 		return discord, nil
 	}
 
-	_, err = m.Supabase.DB.From("providers").Select("*", "", false).Single().Eq("user", *discord.ID).Eq("type", providerID).ExecuteTo(&provider)
+	if len(discord) == 0 {
+		return []types.Provider{}, errors.New("no discord account found")
+	}
+
+	_, err = m.Supabase.DB.From("providers").Select("*", "", false).Eq("user", *discord[0].ID).Eq("type", providerID).ExecuteTo(&provider)
 
 	return provider, err
 }

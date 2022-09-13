@@ -65,7 +65,7 @@ var ScrobblesCommand = &dgc.Command{
 			if err != nil {
 				ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
 					Title:       "Error",
-					Description: "An error occurred while fetching the Last.fm provider.",
+					Description: "An error occurred while fetching the Last.fm account.",
 					Fields: []*discordgo.MessageEmbedField{
 						{
 							Name:   "Error",
@@ -78,7 +78,16 @@ var ScrobblesCommand = &dgc.Command{
 				return
 			}
 
-			provider = p
+			if len(p) < 1 {
+				ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+					Title:       "Error",
+					Description: "You don't have a Last.fm account linked to your account. You may link one [here](https://auth.astralapp.io).",
+					Color:       0xff0000,
+				}))
+				return
+			}
+
+			provider = p[0]
 		} else {
 			provider = types.Provider{
 				ProviderID: user,
