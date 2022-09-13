@@ -26,6 +26,7 @@ var McBrokenIntegrationID = "f98d0f70-c537-4fda-ad69-50cb0f1a3013"
 var McBrokenCommand = &dgc.Command{
 	Name:          "mcbroken",
 	Domain:        "astral.integrations.mcbroken",
+	Category:      "McBroken",
 	Aliases:       []string{"mcbroken"},
 	Description:   "Is the ice cream machine broken?",
 	Slash:         true,

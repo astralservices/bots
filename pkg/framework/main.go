@@ -1,16 +1,20 @@
 package framework
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
 	bot "github.com/astralservices/bots/pkg/commands/bot"
 	fun "github.com/astralservices/bots/pkg/commands/fun"
+	"github.com/astralservices/bots/pkg/commands/integrations"
 	college "github.com/astralservices/bots/pkg/commands/integrations/college"
 	lastfm "github.com/astralservices/bots/pkg/commands/integrations/lastfm"
 	mcbroken "github.com/astralservices/bots/pkg/commands/integrations/mcbroken"
+	reminders "github.com/astralservices/bots/pkg/commands/integrations/reminders"
 	moderation "github.com/astralservices/bots/pkg/commands/moderation"
 	"github.com/astralservices/bots/pkg/commands/utility"
 	db "github.com/astralservices/bots/pkg/database/supabase"
@@ -35,6 +39,8 @@ type Bot struct {
 func (i *Bot) Initialize() {
 	log.Println("Initialize", *i.Bot.ID)
 	rand.Seed(time.Now().Unix() + i.Bot.CreatedAt.Unix())
+
+	isProd := os.Getenv("ENV") == "production"
 
 	s, err := discordgo.New("Bot " + i.Bot.Token)
 
@@ -107,6 +113,16 @@ func (i *Bot) Initialize() {
 
 	router.RegisterCmd(mcbroken.McBrokenCommand)
 
+	router.RegisterCmd(reminders.RemindCommand)
+	router.RegisterCmd(reminders.RemindRepeatCommand)
+	router.RegisterCmd(reminders.ListRemindersCommand)
+	router.RegisterCmd(reminders.DeleteReminderCommand)
+	err = integrations.SetupReminders(i.Session, i.Bot)
+
+	if err != nil {
+		utils.ErrorHandler(fmt.Errorf("Error setting up reminders: %w", err))
+	}
+
 	/// Register middleware ///
 	workspaceIntegrations, err := database.GetIntegrationsForWorkspace(*i.Bot.Workspace)
 
@@ -122,7 +138,7 @@ func (i *Bot) Initialize() {
 			if ctx.Command.IntegrationID != "" {
 				for _, integration := range workspaceIntegrations {
 					if integration.Integration == ctx.Command.IntegrationID {
-						if integration.Enabled {
+						if integration.Enabled && !isProd {
 							next(ctx)
 						} else {
 							ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
