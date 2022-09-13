@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"os"
 	"strings"
 	"time"
 
@@ -39,8 +38,6 @@ type Bot struct {
 func (i *Bot) Initialize() {
 	log.Println("Initialize", *i.Bot.ID)
 	rand.Seed(time.Now().Unix() + i.Bot.CreatedAt.Unix())
-
-	isProd := os.Getenv("ENV") == "production"
 
 	s, err := discordgo.New("Bot " + i.Bot.Token)
 
@@ -138,7 +135,7 @@ func (i *Bot) Initialize() {
 			if ctx.Command.IntegrationID != "" {
 				for _, integration := range workspaceIntegrations {
 					if integration.Integration == ctx.Command.IntegrationID {
-						if integration.Enabled && !isProd {
+						if integration.Enabled {
 							next(ctx)
 						} else {
 							ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{

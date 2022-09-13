@@ -32,6 +32,7 @@ var ListRemindersCommand = &dgc.Command{
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
+			return
 		}
 
 		var reminders types.ReminderIntegrationData
