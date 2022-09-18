@@ -112,7 +112,7 @@ var VerifyStudentCommand = &dgc.Command{
 		}
 
 		// check if the user has already verified their email
-		if data.Data.(map[string]interface{})["email"].(map[string]interface{})["verified"].(bool) {
+		if data.Data.(map[string]interface{})["email"] != nil && data.Data.(map[string]interface{})["email"].(map[string]interface{})["verified"].(bool) {
 			var fields []*discordgo.MessageEmbedField = []*discordgo.MessageEmbedField{
 				{
 					Name:   "Email",
@@ -196,8 +196,27 @@ var VerifyStudentCommand = &dgc.Command{
 			return
 		}
 
+		guild, err := ctx.Session.Guild(ctx.Event.GuildID)
+
+		if err != nil {
+			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+				Title:       "Error",
+				Description: "An error occurred while fetching the guild.",
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:   "Error",
+						Value:  err.Error(),
+						Inline: false,
+					},
+				},
+				Color: 0xff0000,
+			}))
+
+			return
+		}
+
 		// send the verification email
-		err = SendEmail([]string{email}, uuid.String(), wi.Workspace, wi.Integration)
+		err = SendEmail([]string{email}, uuid.String(), wi.Workspace, wi.Integration, guild.Name)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
@@ -250,7 +269,7 @@ var VerifyStudentCommand = &dgc.Command{
 	},
 }
 
-func SendEmail(to []string, code string, workspace string, integration string) error {
+func SendEmail(to []string, code string, workspace string, integration string, guildName string) error {
 	sender := "support@astralapp.io"
 
 	user := os.Getenv("SMTP_USER")
@@ -270,11 +289,13 @@ func SendEmail(to []string, code string, workspace string, integration string) e
 		AuthUrl     string
 		Workspace   string
 		Integration string
+		GuildName   string
 	}{
 		Code:        code,
 		AuthUrl:     os.Getenv("AUTH_URL"),
 		Workspace:   workspace,
 		Integration: integration,
+		GuildName:   guildName,
 	})
 
 	if err != nil {
