@@ -21,17 +21,18 @@ var ListRemindersCommand = &dgc.Command{
 	Handler: func(ctx *dgc.Ctx) {
 		database := db.New()
 
-		wiID, err := integrations.GetWorkspaceIntegrationForCommand(ctx, ReminderIntegrationID)
+		wi, err := integrations.GetWorkspaceIntegrationForCommand(ctx, ReminderIntegrationID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
 			return
 		}
 
-		iD, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wiID)
+		iD, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wi.ID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
+			return
 		}
 
 		var reminders types.ReminderIntegrationData

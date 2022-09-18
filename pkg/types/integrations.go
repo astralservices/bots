@@ -25,7 +25,7 @@ type Integration struct {
 }
 
 type IntegrationData struct {
-	ID                   int     `json:"id"`
+	ID                   *int    `json:"id,omitempty"`
 	CreatedAt            *string `json:"created_at,omitempty"`
 	Integration          string  `json:"integration"`
 	WorkspaceIntegration int     `json:"workspaceIntegration"`
@@ -34,8 +34,15 @@ type IntegrationData struct {
 }
 
 type CollegeIntegrationData struct {
-	Room  string `json:"room"`
-	House string `json:"house"`
+	Room  string       `json:"room"`
+	House string       `json:"house"`
+	Email CollegeEmail `json:"email"`
+}
+
+type CollegeEmail struct {
+	Verified         bool   `json:"verified"`
+	VerificationCode string `json:"verificationCode"`
+	Address          string `json:"address"`
 }
 
 type ReminderIntegrationData struct {
