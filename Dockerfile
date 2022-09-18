@@ -41,6 +41,7 @@ WORKDIR /app
 
 ### Copy built binary application from 'builder' image
 COPY --from=builder /app/main .
+COPY --from=builder /app/verify.html .
 
 ### Copy the certs from builder
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
