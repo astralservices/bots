@@ -93,18 +93,18 @@ func (d *DiscordNotifier) Notify(title, message string) error {
 	return err
 }
 
-func GetWorkspaceIntegrationForCommand(ctx *dgc.Ctx, integrationID string) (workspaceIntegrationID int, err error) {
+func GetWorkspaceIntegrationForCommand(ctx *dgc.Ctx, integrationID string) (workspaceIntegration types.WorkspaceIntegration, err error) {
 	data := ctx.CustomObjects.MustGet("workspaceIntegrations")
 
 	workspaceIntegrations := data.([]types.WorkspaceIntegration)
 
 	for _, workspaceIntegration := range workspaceIntegrations {
 		if workspaceIntegration.Integration == integrationID {
-			return workspaceIntegration.ID, nil
+			return workspaceIntegration, nil
 		}
 	}
 
-	return 0, fmt.Errorf("no workspace integration found for integration %s", integrationID)
+	return types.WorkspaceIntegration{}, fmt.Errorf("no workspace integration found for integration %s", integrationID)
 }
 
 func SetupReminders(session *discordgo.Session, self types.Bot) (err error) {

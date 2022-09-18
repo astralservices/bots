@@ -34,7 +34,7 @@ var DormCommand = &dgc.Command{
 			user = ctx.Arguments.Get(0).AsUserMentionID()
 		}
 
-		wiID, err := integrations.GetWorkspaceIntegrationForCommand(ctx, CollegeIntegrationID)
+		wi, err := integrations.GetWorkspaceIntegrationForCommand(ctx, CollegeIntegrationID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
@@ -52,7 +52,7 @@ var DormCommand = &dgc.Command{
 			return
 		}
 
-		data, err := db.GetIntegrationDataForUser(user, CollegeIntegrationID, wiID)
+		data, err := db.GetIntegrationDataForUser(user, CollegeIntegrationID, wi.ID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{

@@ -24,7 +24,7 @@ var SetDormCommand = &dgc.Command{
 
 		database := db.New()
 
-		wiID, err := integrations.GetWorkspaceIntegrationForCommand(ctx, CollegeIntegrationID)
+		wi, err := integrations.GetWorkspaceIntegrationForCommand(ctx, CollegeIntegrationID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
@@ -43,7 +43,7 @@ var SetDormCommand = &dgc.Command{
 			return
 		}
 
-		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wiID, map[string]interface{}{
+		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wi.ID, map[string]interface{}{
 			"house": house,
 			"room":  room,
 		})

@@ -105,6 +105,7 @@ func (i *Bot) Initialize() {
 	router.RegisterCmd(college.DormCommand)
 	router.RegisterCmd(college.DormlistCommand)
 	router.RegisterCmd(college.SetDormCommand)
+	router.RegisterCmd(college.VerifyStudentCommand)
 
 	router.RegisterCmd(lastfm.ScrobblesCommand)
 

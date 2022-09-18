@@ -58,14 +58,14 @@ var RemindRepeatCommand = &dgc.Command{
 		// Add to the database
 		database := db.New()
 
-		wiID, err := integrations.GetWorkspaceIntegrationForCommand(ctx, ReminderIntegrationID)
+		wi, err := integrations.GetWorkspaceIntegrationForCommand(ctx, ReminderIntegrationID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
 			return
 		}
 
-		iD, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wiID)
+		iD, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wi.ID)
 
 		if err != nil {
 			// do nothing because the user may not have any data
@@ -102,7 +102,7 @@ var RemindRepeatCommand = &dgc.Command{
 			}
 		}
 
-		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wiID, types.ReminderIntegrationData{
+		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wi.ID, types.ReminderIntegrationData{
 			Reminders: reminders,
 		})
 
@@ -112,7 +112,7 @@ var RemindRepeatCommand = &dgc.Command{
 			UserID:   user,
 			Session:  ctx.Session,
 			Reminder: re,
-			WiID:     wiID,
+			WiID:     wi.ID,
 		}
 
 		job, err := scheduler.Every(int(duration.Seconds())).Seconds().NotImmediately().Run(func() {

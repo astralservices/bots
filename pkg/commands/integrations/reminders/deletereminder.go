@@ -25,14 +25,14 @@ var DeleteReminderCommand = &dgc.Command{
 		// Get the reminder id
 		id := ctx.Arguments.Get(0).Raw()
 
-		wiID, err := integrations.GetWorkspaceIntegrationForCommand(ctx, ReminderIntegrationID)
+		wi, err := integrations.GetWorkspaceIntegrationForCommand(ctx, ReminderIntegrationID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
 			return
 		}
 
-		iD, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wiID)
+		iD, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wi.ID)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
@@ -60,7 +60,7 @@ var DeleteReminderCommand = &dgc.Command{
 			}
 		}
 
-		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wiID, types.ReminderIntegrationData{
+		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, ReminderIntegrationID, wi.ID, types.ReminderIntegrationData{
 			Reminders: reminders.Reminders,
 		})
 
