@@ -20,6 +20,8 @@ type Database interface {
 	GetBot(botID string) (types.Bot, error)
 	// SetBot sets the bot settings for the given bot.
 	SetBot(botID string, settings types.Bot) error
+	// GetBotForWorkspace returns the bot settings for the given workspace.
+	GetBotForWorkspace(workspaceID string) (types.Bot, error)
 
 	////////////////////////////////////////////////////////////////////////////
 	//// BOT PERMISSIONS ///////////////////////////////////////////////////////

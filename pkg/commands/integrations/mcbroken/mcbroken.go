@@ -54,8 +54,8 @@ var McBrokenCommand = &dgc.Command{
 		}
 
 		ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
-			Title:       "McDonalds Machines Broken",
-			Description: fmt.Sprintf("%f%% of the machines are broken.", mcBroken.Broken),
+			Title:       "McDonalds Ice Cream Machines Broken",
+			Description: fmt.Sprintf("%f%% of the ice cream machines are broken.", mcBroken.Broken),
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:  "Cities",

@@ -30,6 +30,8 @@ type Bot struct {
 	analyticsCache  types.BotAnalytics
 	analyticsSync   chan bool
 	analyticsTicker *time.Ticker
+
+	permissionsMiddleware *middlewares.PermissionsMiddleware
 }
 
 func (i *Bot) Initialize() {
@@ -66,6 +68,7 @@ func (i *Bot) Initialize() {
 
 	botMiddleware := middlewares.Bot{Bot: i.Bot}
 	permissionsMiddleware := middlewares.PermissionsMiddleware{Bot: i.Bot}
+	i.permissionsMiddleware = &permissionsMiddleware
 
 	router.RegisterMiddleware(botMiddleware.BotMiddleware)
 	router.RegisterMiddleware(i.analyticsMiddleware)
@@ -180,9 +183,13 @@ func (i *Bot) Destroy() error {
 	}
 }
 
-func (i *Bot) Update() error {
-	i.statusInterval <- i.Bot.Settings.ActivityInterval
-	return nil
+func (i *Bot) Update() {
+	i.permissionsMiddleware.UpdateConfig(&i.Bot)
+
+	select {
+	case i.statusInterval <- i.Bot.Settings.ActivityInterval:
+	default:
+	}
 }
 
 func (i *Bot) updateStatusLoop() {

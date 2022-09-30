@@ -26,6 +26,10 @@ type PermissionsMiddleware struct {
 	cache map[string]permissions.PermissionArray
 }
 
+func (m *PermissionsMiddleware) UpdateConfig(cfg *types.Bot) {
+	m.cfg = cfg
+}
+
 func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionHandler {
 	return func(ctx *dgc.Ctx) {
 		if m.db == nil {
@@ -75,9 +79,9 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 		m.cache = make(map[string]permissions.PermissionArray)
 	}
 
-	if p, ok := m.cache[userID]; ok {
-		return p, false, nil
-	}
+	// if p, ok := m.cache[userID]; ok {
+	// 	return p, false, nil
+	// }
 
 	if guildID != "" {
 		perm, err = m.GetMemberPermission(s, guildID, userID)
@@ -121,7 +125,7 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 
 	perm = perm.Merge(defUserRoles, false)
 
-	m.cache[userID] = perm
+	// m.cache[userID] = perm
 
 	return perm, overrideExplicits, nil
 }
@@ -142,7 +146,7 @@ func (m *PermissionsMiddleware) CheckPermissions(s *discordgo.Session, guildID, 
 // GetMemberPermissions returns a PermissionsArray based on the passed
 // members roles permissions rulesets for the given guild.
 func (m *PermissionsMiddleware) GetMemberPermission(s *discordgo.Session, guildID string, memberID string) (permissions.PermissionArray, error) {
-	guildPerms := m.cfg.Permissions.Users
+	guildPerms := m.cfg.Permissions.Roles
 
 	membRoles, err := utils.GetSortedMemberRoles(s, guildID, memberID, false, true)
 	if err != nil {

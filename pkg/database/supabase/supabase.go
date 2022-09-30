@@ -44,6 +44,12 @@ func (m *SupabaseMiddleware) SetBot(botID string, settings types.Bot) error {
 	return err
 }
 
+func (m *SupabaseMiddleware) GetBotForWorkspace(workspaceID string) (types.Bot, error) {
+	var bot types.Bot
+	_, err := m.Supabase.DB.From("bots").Select("*", "", false).Single().Eq("workspace", workspaceID).ExecuteTo(&bot)
+	return bot, err
+}
+
 func (m *SupabaseMiddleware) AddReport(report types.Report) (types.Report, error) {
 	var newReport types.Report
 	_, err := m.Supabase.DB.From("moderation_actions").Insert(report, false, "", "", "").Single().ExecuteTo(&newReport)
