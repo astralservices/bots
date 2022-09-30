@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -51,8 +52,10 @@ var Info = &dgc.Command{
 		if isWindows {
 			cpuString = "N/A"
 		} else {
-			cpuString = "**User**: " + string(cpu.User) + "%"
+			cpuString = fmt.Sprintf("**Usage:** %.2f%%", float64(cpu.User)/1024/1024)
 		}
+
+		self := ctx.CustomObjects.MustGet("self").(types.Bot)
 
 		embed := discordgo.MessageEmbed{}
 		embed.Title = "Bot Information"
@@ -61,6 +64,10 @@ var Info = &dgc.Command{
 			{
 				Name:  "Region",
 				Value: "Fetching...",
+			},
+			{
+				Name:  "Bot ID",
+				Value: fmt.Sprintf("`%s`", *self.ID),
 			},
 			{
 				Name:  "Version",
@@ -91,11 +98,10 @@ var Info = &dgc.Command{
 
 		if err != nil {
 			utils.ErrorHandler(err)
+			return
 		}
 
 		database := db.New()
-
-		self := ctx.CustomObjects.MustGet("self").(types.Bot)
 
 		var regionName string
 
