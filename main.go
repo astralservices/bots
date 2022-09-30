@@ -63,13 +63,16 @@ func main() {
 	db := "realtime"
 	schema := "public"
 	table := "bots"
-	ch, err := c.Channel(realtimego.WithTable(&db, &schema, &table))
+	botsRt, err := c.Channel(realtimego.WithTable(&db, &schema, &table))
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	otherTable := "workspace_integrations"
+	integrationsRt, err := c.Channel(realtimego.WithTable(&db, &schema, &otherTable))
+
 	// setup hooks
-	ch.OnInsert = func(m realtimego.Message) {
+	botsRt.OnInsert = func(m realtimego.Message) {
 		var payload utils.RealtimePayload[types.Bot]
 
 		str, err := json.Marshal(m.Payload)
@@ -87,7 +90,7 @@ func main() {
 			cache.AddBot(payload.Record)
 		}
 	}
-	ch.OnDelete = func(m realtimego.Message) {
+	botsRt.OnDelete = func(m realtimego.Message) {
 		var payload utils.RealtimePayload[types.Bot]
 
 		str, err := json.Marshal(m.Payload)
@@ -107,7 +110,8 @@ func main() {
 			cache.DeleteBot(payload.Record)
 		}
 	}
-	ch.OnUpdate = func(m realtimego.Message) {
+
+	botsRt.OnUpdate = func(m realtimego.Message) {
 		var payload utils.RealtimePayload[types.Bot]
 
 		str, err := json.Marshal(m.Payload)
@@ -142,8 +146,46 @@ func main() {
 		}
 	}
 
+	integrationsFunc := func(m realtimego.Message) {
+		var payload utils.RealtimePayload[types.WorkspaceIntegration]
+
+		str, err := json.Marshal(m.Payload)
+
+		if err != nil {
+			utils.ErrorHandler(err)
+			return
+		}
+
+		err = json.Unmarshal(str, &payload)
+		if err != nil {
+			utils.ErrorHandler(err)
+			return
+		}
+
+		// find bot then restart
+		bot, err := database.GetBotForWorkspace(payload.Record.Workspace)
+
+		b := cache.Bots[*bot.ID]
+
+		if b != nil {
+			log.Println("Restart Bot", *bot.ID)
+
+			cache.DeleteBot(b.Bot)
+			cache.AddBot(b.Bot)
+		}
+	}
+
+	integrationsRt.OnInsert = integrationsFunc
+	integrationsRt.OnUpdate = integrationsFunc
+	integrationsRt.OnDelete = integrationsFunc
+
 	// subscribe to channel
-	err = ch.Subscribe()
+	err = botsRt.Subscribe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = integrationsRt.Subscribe()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -199,9 +241,5 @@ func (c *Cache) UpdateBot(bot types.Bot) {
 
 	c.Bots[*bot.ID].Bot = bot
 
-	err := c.Bots[*bot.ID].Update()
-
-	if err != nil {
-		utils.ErrorHandler(err)
-	}
+	c.Bots[*bot.ID].Update()
 }

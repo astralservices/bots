@@ -18,6 +18,7 @@ type Permissions struct {
 	DefaultAdminRules []string            `json:"defaultAdminRules"`
 	DefaultUserRules  []string            `json:"defaultUserRules"`
 	Users             map[string][]string `json:"users"`
+	Roles             map[string][]string `json:"roles"`
 }
 
 type BotCommand struct {
