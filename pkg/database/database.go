@@ -70,6 +70,9 @@ type Database interface {
 	// GetIntegrationDataForWorkspace returns the integration data for the given workspace.
 	GetIntegrationDataForWorkspace(workspaceID string, integrationID string) ([]types.IntegrationData, error)
 
+	// SetIntegrationDataForWorkspace sets the integration data for the given workspace.
+	SetIntegrationDataForWorkspace(workspaceID string, integrationID string, data any) error
+
 	// GetIntegrationForWorkspace returns the integration for the given workspace.
 	GetIntegrationForWorkspace(integrationID string, workspaceID string) (types.WorkspaceIntegration, error)
 
