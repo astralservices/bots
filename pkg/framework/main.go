@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -13,6 +14,7 @@ import (
 	college "github.com/astralservices/bots/pkg/commands/integrations/college"
 	lastfm "github.com/astralservices/bots/pkg/commands/integrations/lastfm"
 	mcbroken "github.com/astralservices/bots/pkg/commands/integrations/mcbroken"
+	reactionroles "github.com/astralservices/bots/pkg/commands/integrations/reaction_roles"
 	reminders "github.com/astralservices/bots/pkg/commands/integrations/reminders"
 	moderation "github.com/astralservices/bots/pkg/commands/moderation"
 	"github.com/astralservices/bots/pkg/commands/utility"
@@ -42,6 +44,12 @@ func (i *Bot) Initialize() {
 	rand.Seed(time.Now().Unix() + i.Bot.CreatedAt.Unix())
 
 	s, err := discordgo.New("Bot " + i.Bot.Token)
+
+	// Intents
+
+	s.Identify.Intents |= discordgo.IntentsGuildMessages
+	s.Identify.Intents |= discordgo.IntentsGuildMessageReactions
+	s.Identify.Intents |= discordgo.IntentsGuildMembers
 
 	if err != nil {
 		utils.ErrorHandler(err)
@@ -124,12 +132,48 @@ func (i *Bot) Initialize() {
 		utils.ErrorHandler(fmt.Errorf("Error setting up reminders: %w", err))
 	}
 
+	router.RegisterCmd(reactionroles.AddReactionRole)
+	router.RegisterCmd(reactionroles.RemoveReactionRole)
+	router.RegisterCmd(reactionroles.ListReactionRoles)
+
 	/// Register middleware ///
 	workspaceIntegrations, err := database.GetIntegrationsForWorkspace(*i.Bot.Workspace)
 
 	if err != nil {
 		utils.ErrorHandler(err)
 		panic(err)
+	}
+
+	for _, integration := range workspaceIntegrations {
+		if integration.Integration == reactionroles.ReactionRolesIntegrationID {
+			if integration.Enabled {
+				data, err := database.GetIntegrationDataForWorkspace(*i.Bot.Workspace, integration.Integration)
+
+				if err != nil {
+					utils.ErrorHandler(err)
+					panic(err)
+				}
+
+				jsonStr, err := json.Marshal(data[0].Data)
+
+				if err != nil {
+					utils.ErrorHandler(err)
+					panic(err)
+				}
+
+				var reactionRolesData reactionroles.ReactionRolesData
+
+				err = json.Unmarshal(jsonStr, &reactionRolesData)
+
+				if err != nil {
+					utils.ErrorHandler(err)
+					panic(err)
+				}
+
+				s.AddHandler(reactionroles.HandleReactionRolesAdd(*i.Bot.Workspace))
+				s.AddHandler(reactionroles.HandleReactionRolesRemove(*i.Bot.Workspace))
+			}
+		}
 	}
 
 	router.RegisterMiddleware(func(next dgc.ExecutionHandler) dgc.ExecutionHandler {
