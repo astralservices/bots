@@ -239,6 +239,11 @@ func (c *Cache) DeleteBot(bot types.Bot) {
 func (c *Cache) UpdateBot(bot types.Bot) {
 	log.Println("Update Bot", *bot.ID)
 
+	if c.Bots[*bot.ID] == nil {
+		c.AddBot(bot)
+		return
+	}
+
 	c.Bots[*bot.ID].Bot = bot
 
 	c.Bots[*bot.ID].Update()
