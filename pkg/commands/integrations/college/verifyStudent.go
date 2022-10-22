@@ -54,111 +54,100 @@ var VerifyStudentCommand = &dgc.Command{
 		// get the user's data
 		data, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wi.ID)
 
-		if err != nil {
-			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
-				Title:       "Error",
-				Description: "An error occurred while fetching your data.",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:   "Error",
-						Value:  err.Error(),
-						Inline: false,
-					},
-				},
-				Color: 0xff0000,
-			}))
-
-			return
-		}
-
 		var d types.CollegeIntegrationData
 
-		jsonStr, err := json.Marshal(data.Data)
-
 		if err != nil {
-			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
-				Title:       "Error",
-				Description: "An error occurred while fetching your data.",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:   "Error",
-						Value:  err.Error(),
-						Inline: false,
+			// do nothing as a user may not have data
+		} else {
+
+			jsonStr, err := json.Marshal(data.Data)
+
+			if err != nil {
+				ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+					Title:       "Error",
+					Description: "An error occurred while fetching your data.",
+					Fields: []*discordgo.MessageEmbedField{
+						{
+							Name:   "Error",
+							Value:  err.Error(),
+							Inline: false,
+						},
 					},
-				},
-				Color: 0xff0000,
-			}))
+					Color: 0xff0000,
+				}))
 
-			return
-		}
-
-		err = json.Unmarshal(jsonStr, &d)
-
-		if err != nil {
-			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
-				Title:       "Error",
-				Description: "An error occurred while fetching your data.",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:   "Error",
-						Value:  err.Error(),
-						Inline: false,
-					},
-				},
-				Color: 0xff0000,
-			}))
-
-			return
-		}
-
-		// check if the user has already verified their email
-		if data.Data.(map[string]interface{})["email"].(map[string]interface{})["verified"].(bool) {
-			var fields []*discordgo.MessageEmbedField = []*discordgo.MessageEmbedField{
-				{
-					Name:   "Email",
-					Value:  data.Data.(map[string]interface{})["email"].(map[string]interface{})["address"].(string),
-					Inline: false,
-				},
+				return
 			}
 
-			// give roles, if any
-			if wi.Settings.(map[string]interface{})["verifiedRoleId"] != nil {
-				roleID := wi.Settings.(map[string]interface{})["verifiedRoleId"].(string)
+			err = json.Unmarshal(jsonStr, &d)
 
-				err = ctx.Session.GuildMemberRoleAdd(ctx.Event.GuildID, ctx.Event.Author.ID, roleID)
-
-				if err != nil {
-					ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
-						Title:       "Error",
-						Description: "An error occurred while adding your role.",
-						Fields: []*discordgo.MessageEmbedField{
-							{
-								Name:   "Error",
-								Value:  err.Error(),
-								Inline: false,
-							},
+			if err != nil {
+				ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+					Title:       "Error",
+					Description: "An error occurred while fetching your data.",
+					Fields: []*discordgo.MessageEmbedField{
+						{
+							Name:   "Error",
+							Value:  err.Error(),
+							Inline: false,
 						},
-						Color: 0xff0000,
-					}))
+					},
+					Color: 0xff0000,
+				}))
 
-					return
+				return
+			}
+
+			// check if the user has already verified their email
+			if data.Data.(map[string]interface{})["email"] != nil && data.Data.(map[string]interface{})["email"].(map[string]interface{})["verified"].(bool) {
+				var fields []*discordgo.MessageEmbedField = []*discordgo.MessageEmbedField{
+					{
+						Name:   "Email",
+						Value:  data.Data.(map[string]interface{})["email"].(map[string]interface{})["address"].(string),
+						Inline: false,
+					},
 				}
 
-				fields = append(fields, &discordgo.MessageEmbedField{
-					Name:   "Role",
-					Value:  fmt.Sprintf("<@&%s>", roleID),
-					Inline: false,
-				})
+				// give roles, if any
+				if wi.Settings.(map[string]interface{})["verifiedRoleId"] != nil {
+					roleID := wi.Settings.(map[string]interface{})["verifiedRoleId"].(string)
+
+					err = ctx.Session.GuildMemberRoleAdd(ctx.Event.GuildID, ctx.Event.Author.ID, roleID)
+
+					if err != nil {
+						ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+							Title:       "Error",
+							Description: "An error occurred while adding your role.",
+							Fields: []*discordgo.MessageEmbedField{
+								{
+									Name:   "Error",
+									Value:  err.Error(),
+									Inline: false,
+								},
+							},
+							Color: 0xff0000,
+						}))
+
+						return
+					}
+
+					fields = append(fields, &discordgo.MessageEmbedField{
+						Name:   "Role",
+						Value:  fmt.Sprintf("<@&%s>", roleID),
+						Inline: false,
+					})
+				}
+
+				ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+					Title:       "Verified!",
+					Description: "You've verified your email, and I've given you any roles you're eligible for.",
+					Fields:      fields,
+					Color:       0x00ff00,
+				}))
+
+				return
 			}
 
-			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
-				Title:       "Verified!",
-				Description: "You've verified your email, and I've given you any roles you're eligible for.",
-				Fields:      fields,
-				Color:       0x00ff00,
-			}))
-
-			return
 		}
 
 		// check the email domain
@@ -196,8 +185,27 @@ var VerifyStudentCommand = &dgc.Command{
 			return
 		}
 
+		guild, err := ctx.Session.Guild(ctx.Event.GuildID)
+
+		if err != nil {
+			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+				Title:       "Error",
+				Description: "An error occurred while fetching the guild.",
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:   "Error",
+						Value:  err.Error(),
+						Inline: false,
+					},
+				},
+				Color: 0xff0000,
+			}))
+
+			return
+		}
+
 		// send the verification email
-		err = SendEmail([]string{email}, uuid.String(), wi.Workspace, wi.Integration)
+		err = SendEmail([]string{email}, uuid.String(), wi.Workspace, wi.Integration, guild.Name)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
@@ -216,15 +224,13 @@ var VerifyStudentCommand = &dgc.Command{
 			return
 		}
 
-		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wi.ID, map[string]interface{}{
-			"room":  d.Room,
-			"house": d.House,
-			"email": map[string]interface{}{
-				"verified":         false,
-				"address":          email,
-				"verificationCode": uuid.String(),
-			},
-		})
+		d.Email = types.CollegeEmail{
+			Address:          email,
+			VerificationCode: uuid.String(),
+			Verified:         false,
+		}
+
+		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wi.ID, d)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
@@ -250,7 +256,7 @@ var VerifyStudentCommand = &dgc.Command{
 	},
 }
 
-func SendEmail(to []string, code string, workspace string, integration string) error {
+func SendEmail(to []string, code string, workspace string, integration string, guildName string) error {
 	sender := "support@astralapp.io"
 
 	user := os.Getenv("SMTP_USER")
@@ -270,11 +276,13 @@ func SendEmail(to []string, code string, workspace string, integration string) e
 		AuthUrl     string
 		Workspace   string
 		Integration string
+		GuildName   string
 	}{
 		Code:        code,
 		AuthUrl:     os.Getenv("AUTH_URL"),
 		Workspace:   workspace,
 		Integration: integration,
+		GuildName:   guildName,
 	})
 
 	if err != nil {
