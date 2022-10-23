@@ -11,13 +11,13 @@ import (
 )
 
 var RemoveReactionRole = &dgc.Command{
-	Name:        "rr-remove",
-	Aliases:     []string{"rr-remove", "rr-rm"},
+	Name:        "remove",
+	Aliases:     []string{"remove", "rm"},
 	Description: "Remove a reaction role from a message",
-	Usage:       "rr-remove <message_id> <emoji>",
-	Example:     "rr-remove 123456789012345678 🎉",
+	Usage:       "rr remove <message_id> <emoji>",
+	Example:     "rr remove 123456789012345678 🎉",
 	Category:    "Reaction Roles",
-	Domain:      "astral.integrations.reactionroles-rm",
+	Domain:      "astral.integrations.reactionroles.remove",
 	Handler: func(ctx *dgc.Ctx) {
 		database := db.New()
 
