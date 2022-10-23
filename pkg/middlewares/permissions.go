@@ -9,8 +9,6 @@ import (
 	"github.com/astralservices/bots/pkg/utils"
 	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
-
-	"github.com/zekroTJA/shireikan"
 )
 
 // PermissionsMiddleware is a command handler middleware
@@ -28,6 +26,8 @@ type PermissionsMiddleware struct {
 
 func (m *PermissionsMiddleware) UpdateConfig(cfg *types.Bot) {
 	m.cfg = cfg
+	// force update the cache
+	m.cache = make(map[string]permissions.PermissionArray)
 }
 
 func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionHandler {
@@ -65,10 +65,6 @@ func (m *PermissionsMiddleware) Handle(next dgc.ExecutionHandler) dgc.ExecutionH
 	}
 }
 
-func (m *PermissionsMiddleware) GetLayer() shireikan.MiddlewareLayer {
-	return shireikan.LayerBeforeCommand
-}
-
 // GetPermissions tries to fetch the permissions array of
 // the passed user of the specified guild. The merged
 // permissions array is returned as well as the override,
@@ -79,9 +75,9 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 		m.cache = make(map[string]permissions.PermissionArray)
 	}
 
-	// if p, ok := m.cache[userID]; ok {
-	// 	return p, false, nil
-	// }
+	if p, ok := m.cache[userID]; ok {
+		return p, false, nil
+	}
 
 	if guildID != "" {
 		perm, err = m.GetMemberPermission(s, guildID, userID)
@@ -115,7 +111,13 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 			var defAdminRoles []string
 			defAdminRoles = m.cfg.Permissions.DefaultAdminRules
 
+			hardCoded := []string{
+				"+astral.integrations.reactionrole-add",
+				"+astral.integrations.reactionrole-remove",
+			}
+
 			perm = perm.Merge(defAdminRoles, false)
+			perm = perm.Merge(hardCoded, false)
 			overrideExplicits = true
 		}
 	}
@@ -125,7 +127,16 @@ func (m *PermissionsMiddleware) GetPermissions(s *discordgo.Session, guildID, us
 
 	perm = perm.Merge(defUserRoles, false)
 
-	// m.cache[userID] = perm
+	var hardCoded []string
+	hardCoded = []string{
+		"-astral.integrations.reactionrole-add",
+		"-astral.integrations.reactionrole-remove",
+		"+astral.integrations.reactionrole-list",
+	}
+
+	perm = perm.Merge(hardCoded, false)
+
+	m.cache[userID] = perm
 
 	return perm, overrideExplicits, nil
 }
@@ -147,6 +158,7 @@ func (m *PermissionsMiddleware) CheckPermissions(s *discordgo.Session, guildID, 
 // members roles permissions rulesets for the given guild.
 func (m *PermissionsMiddleware) GetMemberPermission(s *discordgo.Session, guildID string, memberID string) (permissions.PermissionArray, error) {
 	guildPerms := m.cfg.Permissions.Roles
+	userPerms := m.cfg.Permissions.Users
 
 	membRoles, err := utils.GetSortedMemberRoles(s, guildID, memberID, false, true)
 	if err != nil {
@@ -161,6 +173,14 @@ func (m *PermissionsMiddleware) GetMemberPermission(s *discordgo.Session, guildI
 			} else {
 				res = res.Merge(p, true)
 			}
+		}
+	}
+
+	if p, ok := userPerms[memberID]; ok {
+		if res == nil {
+			res = p
+		} else {
+			res = res.Merge(p, true)
 		}
 	}
 
