@@ -12,13 +12,13 @@ import (
 )
 
 var ListReactionRoles = &dgc.Command{
-	Name:        "rr-list",
-	Aliases:     []string{"rr-list", "rr-ls"},
+	Name:        "list",
+	Aliases:     []string{"list", "ls"},
 	Description: "List all reaction roles for a message",
-	Usage:       "rr-list <message_id>",
-	Example:     "rr-list 123456789012345678",
+	Usage:       "rr list <message_id>",
+	Example:     "rr list 123456789012345678",
 	Category:    "Reaction Roles",
-	Domain:      "astral.integrations.reactionroles-list",
+	Domain:      "astral.integrations.reactionroles.list",
 	Handler: func(ctx *dgc.Ctx) {
 		database := db.New()
 

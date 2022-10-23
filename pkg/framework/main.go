@@ -132,9 +132,7 @@ func (i *Bot) Initialize() {
 		utils.ErrorHandler(fmt.Errorf("Error setting up reminders: %w", err))
 	}
 
-	router.RegisterCmd(reactionroles.AddReactionRole)
-	router.RegisterCmd(reactionroles.RemoveReactionRole)
-	router.RegisterCmd(reactionroles.ListReactionRoles)
+	router.RegisterCmd(reactionroles.ReactionRoleCommand)
 
 	/// Register middleware ///
 	workspaceIntegrations, err := database.GetIntegrationsForWorkspace(*i.Bot.Workspace)
@@ -209,7 +207,7 @@ func (i *Bot) Initialize() {
 		}
 		i.analyticsCache.Messages++
 
-		guild, err := s.GuildWithCounts(m.GuildID)
+		guild, err := s.State.Guild(m.GuildID)
 
 		if err != nil {
 			utils.ErrorHandler(err)
@@ -227,6 +225,23 @@ func (i *Bot) Initialize() {
 
 	i.checkExpiredReports()
 	go i.checkExpiredReportsLoop()
+
+	guildStateTicker := time.NewTicker(time.Minute * 1)
+
+	go func() {
+		for {
+			select {
+			case <-guildStateTicker.C:
+				guild, err := s.GuildWithCounts(i.Bot.Settings.Guild)
+
+				if err != nil {
+					utils.ErrorHandler(err)
+				}
+
+				s.State.GuildAdd(guild)
+			}
+		}
+	}()
 }
 
 func (i *Bot) Destroy() error {

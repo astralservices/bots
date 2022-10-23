@@ -1,10 +1,12 @@
 package integrations
 
 import (
+	"encoding/json"
 	"os"
 
 	"github.com/astralservices/bots/pkg/commands/integrations"
 	db "github.com/astralservices/bots/pkg/database/supabase"
+	"github.com/astralservices/bots/pkg/types"
 	"github.com/astralservices/bots/pkg/utils"
 	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
@@ -43,10 +45,56 @@ var SetDormCommand = &dgc.Command{
 			return
 		}
 
-		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wi.ID, map[string]interface{}{
-			"house": house,
-			"room":  room,
-		})
+		data, err := database.GetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wi.ID)
+
+		var d types.CollegeIntegrationData
+
+		if err != nil {
+			// do nothing as a user may not have data
+		} else {
+			jsonStr, err := json.Marshal(data.Data)
+
+			if err != nil {
+				ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+					Title:       "Error",
+					Description: "An error occurred while fetching the dorm.",
+					Fields: []*discordgo.MessageEmbedField{
+						{
+							Name:   "Error",
+							Value:  err.Error(),
+							Inline: false,
+						},
+					},
+					Color: 0xff0000,
+				}))
+
+				return
+			}
+
+			err = json.Unmarshal(jsonStr, &d)
+
+			if err != nil {
+				ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{
+					Title:       "Error",
+					Description: "An error occurred while fetching the dorm.",
+					Fields: []*discordgo.MessageEmbedField{
+						{
+							Name:   "Error",
+							Value:  err.Error(),
+							Inline: false,
+						},
+					},
+					Color: 0xff0000,
+				}))
+
+				return
+			}
+		}
+
+		d.House = house
+		d.Room = room
+
+		err = database.SetIntegrationDataForUser(ctx.Event.Author.ID, CollegeIntegrationID, wi.ID, d)
 
 		if err != nil {
 			ctx.ReplyEmbed(utils.GenerateEmbed(*ctx, discordgo.MessageEmbed{

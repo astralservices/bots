@@ -11,13 +11,13 @@ import (
 )
 
 var AddReactionRole = &dgc.Command{
-	Name:        "rr-add",
-	Aliases:     []string{"rr-add", "rr", "reactionrole"},
+	Name:        "add",
+	Aliases:     []string{"add", "create"},
 	Description: "Add a reaction role to a message. You must be in the same channel as the message.",
-	Usage:       "rr-add <message_id> <emoji> <role_id> <dm [false]> <remove_reaction [true]>",
-	Example:     "rr-add 123456789012345678 🎉 123456789012345678 true true",
+	Usage:       "rr add <message_id> <emoji> <role_id> <dm [false]> <remove_reaction [true]>",
+	Example:     "rr add 123456789012345678 🎉 123456789012345678 true true",
 	Category:    "Reaction Roles",
-	Domain:      "astral.integrations.reactionroles-add",
+	Domain:      "astral.integrations.reactionroles.add",
 	Handler: func(ctx *dgc.Ctx) {
 		database := db.New()
 
