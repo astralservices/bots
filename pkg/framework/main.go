@@ -236,6 +236,11 @@ func (i *Bot) Initialize() {
 
 				if err != nil {
 					utils.ErrorHandler(err)
+					return
+				}
+				
+				if guild == nil {
+					return	
 				}
 
 				s.State.GuildAdd(guild)
