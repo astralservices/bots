@@ -181,7 +181,30 @@ func WithCustomRatelimit(cmd *dgc.Command, ratelimit int64) *dgc.Command {
 	duration := time.Duration((60 / ratelimit)) * time.Second
 
 	cmd.RateLimiter = dgc.NewRateLimiter(duration, 1, func(c *dgc.Ctx) {
-		c.Session.MessageReactionAdd(c.Event.ChannelID, c.Event.ID, "⏱️")
+		c.ReplyEmbed(GenerateEmbed(*c, discordgo.MessageEmbed{
+			Title:       "Slow down!",
+			Description: "This command is ratelimited!",
+			Color:       0xff0000,
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:   "Ratelimit",
+					Value:  fmt.Sprintf("%d per minute (every %d seconds)", ratelimit, duration/time.Second),
+					Inline: true,
+				},
+			},
+		}))
 	})
 	return cmd
+}
+
+func IntPointer(i int) *int {
+	return &i
+}
+
+func Int64Pointer(i int64) *int64 {
+	return &i
+}
+
+func BoolPointer(b bool) *bool {
+	return &b
 }

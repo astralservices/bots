@@ -192,15 +192,18 @@ var MuteCommand = &dgc.Command{
 
 			if mutedRole == nil {
 				// create a new role for the mute
-				mutedRole, err = ctx.Session.GuildRoleCreate(ctx.Event.GuildID)
+				mutedRole, err = ctx.Session.GuildRoleCreate(ctx.Event.GuildID, &discordgo.RoleParams{
+					Name:        "Muted",
+					Color:       utils.IntPointer(0),
+					Permissions: utils.Int64Pointer(0),
+					Mentionable: utils.BoolPointer(false),
+					Hoist:       utils.BoolPointer(false),
+				})
 
 				if err != nil {
 					ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
 					return
 				}
-
-				// set the role permissions to 0, color to black, and name to "Muted"
-				mutedRole, err = ctx.Session.GuildRoleEdit(ctx.Event.GuildID, mutedRole.ID, "Muted", 0x000000, false, 0, false)
 
 				if err != nil {
 					ctx.ReplyEmbed(utils.ErrorEmbed(*ctx, err))
