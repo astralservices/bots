@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	fun "github.com/astralservices/bots/pkg/commands/fun"
 	"github.com/astralservices/bots/pkg/commands/integrations"
 	college "github.com/astralservices/bots/pkg/commands/integrations/college"
+	"github.com/astralservices/bots/pkg/commands/integrations/dalle"
 	lastfm "github.com/astralservices/bots/pkg/commands/integrations/lastfm"
 	mcbroken "github.com/astralservices/bots/pkg/commands/integrations/mcbroken"
 	reactionroles "github.com/astralservices/bots/pkg/commands/integrations/reaction_roles"
@@ -133,6 +135,31 @@ func (i *Bot) Initialize() {
 	}
 
 	router.RegisterCmd(reactionroles.ReactionRoleCommand)
+
+	dalleIntegration, err := database.GetIntegrationForWorkspace(dalle.DalleIntegrationID, *i.Bot.Workspace)
+
+	if err != nil {
+		utils.ErrorHandler(fmt.Errorf("Error getting DALL-E integration: %w", err))
+		return
+	}
+
+	var ratelimit string
+
+	if k, ok := dalleIntegration.Settings.(map[string]interface{})["rateLimit"].(string); !ok {
+		utils.ErrorHandler(fmt.Errorf("Error getting rate limit for integration %s", dalleIntegration.ID))
+		return
+	} else {
+		ratelimit = k
+	}
+
+	r, err := strconv.ParseInt(ratelimit, 10, 64)
+
+	if err != nil {
+		utils.ErrorHandler(fmt.Errorf("Error parsing rate limit for integration %s", dalleIntegration.ID))
+		return
+	}
+
+	router.RegisterCmd(utils.WithCustomRatelimit(dalle.DalleCommand, r))
 
 	/// Register middleware ///
 	workspaceIntegrations, err := database.GetIntegrationsForWorkspace(*i.Bot.Workspace)
