@@ -9,6 +9,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/astralservices/dgc"
 	"github.com/bwmarrin/discordgo"
 	"github.com/getsentry/sentry-go"
 	realtimego "github.com/overseedio/realtime-go"
@@ -165,4 +166,22 @@ func StringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func WithCustomRatelimit(cmd *dgc.Command, ratelimit int64) *dgc.Command {
+	// ratelimit is N per minute, so if the ratelimit is 2, they can run the command twice in a minute
+	// if the ratelimit is 0, they can run the command as many times as they want
+	if ratelimit == 0 {
+		return cmd
+	}
+
+	// create a time.Duration from the ratelimit. 60 seconds / ratelimit
+	// if the ratelimit is 2, the duration is 30 seconds
+	// if the ratelimit is 5, the duration is 12 seconds
+	duration := time.Duration((60 / ratelimit)) * time.Second
+
+	cmd.RateLimiter = dgc.NewRateLimiter(duration, 1, func(c *dgc.Ctx) {
+		c.Session.MessageReactionAdd(c.Event.ChannelID, c.Event.ID, "⏱️")
+	})
+	return cmd
 }

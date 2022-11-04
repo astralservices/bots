@@ -17,6 +17,7 @@ require (
 
 require (
 	github.com/AlekSi/pointer v1.0.0 // indirect
+	github.com/astralservices/go-dalle v1.0.0 // indirect
 	github.com/cschomburg/go-pushbullet v0.0.0-20171206132031-67759df45fbb // indirect
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
@@ -30,6 +31,7 @@ require (
 	github.com/supabase-community/storage-go v0.5.7 // indirect
 	github.com/supabase/postgrest-go v0.0.7 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
+	golang.org/x/time v0.1.0 // indirect
 )
 
 require (
