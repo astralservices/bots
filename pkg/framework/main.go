@@ -138,28 +138,32 @@ func (i *Bot) Initialize() {
 
 	dalleIntegration, err := database.GetIntegrationForWorkspace(dalle.DalleIntegrationID, *i.Bot.Workspace)
 
+	dalleEnabled := true
+
 	if err != nil {
 		utils.ErrorHandler(fmt.Errorf("Error getting DALL-E integration: %w", err))
-		return
+		dalleEnabled = false
 	}
 
-	var ratelimit string
+	if dalleEnabled {
+		var ratelimit string
 
-	if k, ok := dalleIntegration.Settings.(map[string]interface{})["rateLimit"].(string); !ok {
-		utils.ErrorHandler(fmt.Errorf("Error getting rate limit for integration %s", dalleIntegration.ID))
-		return
-	} else {
-		ratelimit = k
+		if k, ok := dalleIntegration.Settings.(map[string]interface{})["rateLimit"].(string); !ok {
+			utils.ErrorHandler(fmt.Errorf("Error getting rate limit for integration %s", dalleIntegration.ID))
+			return
+		} else {
+			ratelimit = k
+		}
+
+		r, err := strconv.ParseInt(ratelimit, 10, 64)
+
+		if err != nil {
+			utils.ErrorHandler(fmt.Errorf("Error parsing rate limit for integration %s", dalleIntegration.ID))
+			return
+		}
+
+		router.RegisterCmd(utils.WithCustomRatelimit(dalle.DalleCommand, r))
 	}
-
-	r, err := strconv.ParseInt(ratelimit, 10, 64)
-
-	if err != nil {
-		utils.ErrorHandler(fmt.Errorf("Error parsing rate limit for integration %s", dalleIntegration.ID))
-		return
-	}
-
-	router.RegisterCmd(utils.WithCustomRatelimit(dalle.DalleCommand, r))
 
 	/// Register middleware ///
 	workspaceIntegrations, err := database.GetIntegrationsForWorkspace(*i.Bot.Workspace)
@@ -265,9 +269,9 @@ func (i *Bot) Initialize() {
 					utils.ErrorHandler(err)
 					return
 				}
-				
+
 				if guild == nil {
-					return	
+					return
 				}
 
 				s.State.GuildAdd(guild)
